@@ -1,0 +1,15 @@
+name: MapGeneralization
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - certifi=2018.8.24=py35_1001
+  - pip=20.0.2=py_2
+  - python=3.5.5=he025d50_2
+  - setuptools=40.4.3=py35_0
+  - vc=14.1=h0510ff6_4
+  - vs2015_runtime=14.16.27012=hf0eaf9b_1
+  - wheel=0.34.2=py_1
+  - wincertstore=0.2=py35_1002
+prefix: C:\Users\Chrips\Anaconda3\envs\MapGeneralization
+
