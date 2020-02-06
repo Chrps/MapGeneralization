@@ -3,13 +3,47 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - blas=2.14=mkl
+  - ca-certificates=2019.11.28=hecc5488_0
   - certifi=2018.8.24=py35_1001
+  - cycler=0.10.0=py_2
+  - freetype=2.10.0=h563cfd7_1
+  - icc_rt=2019.0.0=h0cc432a_1
+  - icu=64.2=he025d50_1
+  - intel-openmp=2019.4=245
+  - jpeg=9c=hfa6e2cd_1001
+  - kiwisolver=1.0.1=py35he980bc4_2
+  - libblas=3.8.0=14_mkl
+  - libcblas=3.8.0=14_mkl
+  - liblapack=3.8.0=14_mkl
+  - liblapacke=3.8.0=14_mkl
+  - libpng=1.6.37=h7602738_0
+  - m2w64-gcc-libgfortran=5.3.0=6
+  - m2w64-gcc-libs=5.3.0=7
+  - m2w64-gcc-libs-core=5.3.0=7
+  - m2w64-gmp=6.1.0=2
+  - m2w64-libwinpthread-git=5.0.0.4634.697f757=2
+  - matplotlib=3.0.0=py35hd159220_0
+  - mkl=2019.4=245
+  - msys2-conda-epoch=20160418=1
+  - numpy=1.14.2=py35h5c71026_0
+  - openssl=1.1.1d=hfa6e2cd_0
   - pip=20.0.2=py_2
+  - pyparsing=2.4.6=py_0
+  - pyqt=5.9.2=py35h6538335_2
   - python=3.5.5=he025d50_2
+  - python-dateutil=2.8.1=py_0
+  - pytz=2019.3=py_0
+  - qt=5.9.7=h506e8af_3
   - setuptools=40.4.3=py35_0
+  - sip=4.19.8=py35h6538335_1000
+  - six=1.11.0=py35_1
+  - sqlite=3.30.1=hfa6e2cd_0
+  - tornado=5.1.1=py35hfa6e2cd_0
   - vc=14.1=h0510ff6_4
   - vs2015_runtime=14.16.27012=hf0eaf9b_1
   - wheel=0.34.2=py_1
   - wincertstore=0.2=py35_1002
-prefix: C:\Users\Chrips\Anaconda3\envs\MapGeneralization
+  - zlib=1.2.11=h2fa13f4_1006
+prefix: D:\Anaconda3\envs\MapGeneralization
 
