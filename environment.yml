@@ -45,5 +45,8 @@ dependencies:
   - wheel=0.34.2=py_1
   - wincertstore=0.2=py35_1002
   - zlib=1.2.11=h2fa13f4_1006
+  - pip:
+    - comtypes==1.1.7
+    - ezdxf==0.6.2
 prefix: D:\Anaconda3\envs\MapGeneralization
 
