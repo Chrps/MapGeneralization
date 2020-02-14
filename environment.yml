@@ -47,6 +47,6 @@ dependencies:
   - zlib=1.2.11=h2fa13f4_1006
   - pip:
     - comtypes==1.1.7
-    - ezdxf==0.6.2
+    - ezdxf==0.10.4
 prefix: D:\Anaconda3\envs\MapGeneralization
 
