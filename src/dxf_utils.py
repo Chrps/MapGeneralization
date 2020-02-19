@@ -8,6 +8,14 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.figure import figaspect
 import math
+import networkx as nx
+
+class Node:
+    '''Class for keeping track of nodes in network'''
+    def __init__(self, id, coordinate):
+        self.id = id
+        self.coordinate = coordinate
+        self.connected_to = []
 
 class DxfReader:
     """
@@ -148,3 +156,58 @@ class DxfReader:
         ax.add_collection(lc)
         ax.autoscale()
         plt.show()
+
+    def convert_data_to_graph(self, visualize=True):
+        # Create network graph
+        G = nx.Graph()
+        list_of_nodes = []
+        current_id = 0
+
+        for entity in self.line_data:
+            connectivity_list = []
+            for point in entity:
+                point = tuple([int(_) for _ in point])
+                # If we are beginning then list is empty (i.e. no nodes yet)
+                if not list_of_nodes:
+                    list_of_nodes.append(Node(current_id, point))
+                    connectivity_list.append(current_id)
+                    current_id += 1
+                else:
+                    bFoundSameNode = False
+                    for node in list_of_nodes:
+                        # Check if the point in question is the same as a node
+                        if point == node.coordinate:
+                            connectivity_list.append(node.id)
+                            bFoundSameNode = True
+                            break
+                    if not bFoundSameNode:
+                        list_of_nodes.append(Node(current_id, point))
+                        connectivity_list.append(current_id)
+                        current_id += 1
+            for con_idx, connection in enumerate(connectivity_list[:-1]):
+                for node in list_of_nodes:
+                    if node.id == connection:
+                        node.connected_to.append(connectivity_list[con_idx + 1])
+
+        for node in list_of_nodes:
+            G.add_node(node.id, pos=node.coordinate)
+        for node in list_of_nodes:
+            if not node.connected_to:
+                pass
+            else:
+                for node_connection in node.connected_to:
+                    '''
+                    p0 = np.asarray(list_of_nodes[node.id].coordinate)
+                    p1 = np.asarray(list_of_nodes[node_connection].coordinate)
+                    weight = np.linalg.norm(p0 - p1)
+                    G.add_edge(node.id, node_connection, weight=weight)
+                    '''
+                    G.add_edge(node.id, node_connection)
+        if visualize:
+            pos = nx.get_node_attributes(G, 'pos')
+            w, h = figaspect(5 / 3)
+            fig, ax = plt.subplots(figsize=(w, h))
+            nx.draw(G, pos, node_size=20, ax=ax)
+            plt.show()
+
+        return G

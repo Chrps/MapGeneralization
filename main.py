@@ -6,7 +6,8 @@ def main():
 
     dxf_obj = DxfReader(dxf_file_path=file_path)
     data = dxf_obj.extract_data()
-    dxf_obj.plot_data()
+    #dxf_obj.plot_data()
+    dxf_obj.convert_data_to_graph()
 
 
 if __name__ == "__main__":
