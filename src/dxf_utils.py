@@ -133,10 +133,11 @@ class DxfReader:
                     print(e.dxf.location)
                     #point_data.append()
             elif e.dxftype() is 'INSERT':
+                # Get name of block it's inserting
                 pass
 
             else:
-                if not self. unrecognized_types:
+                if not self.unrecognized_types:
                     self.unrecognized_types.append([e.dxftype(), 1])
                 else:
                     if e.dxftype() in list(zip(*self.unrecognized_types))[0]:
