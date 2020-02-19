@@ -44,13 +44,14 @@ class DxfReader:
             return True
 
     def entity2line(self, e):
+        line_out = []
         if e.dxftype() is 'LINE':
             point1 = e.dxf.start
             point2 = e.dxf.end
             if not self.is_hidden(e):
                 # Neglect the z-value as expected to be 0
                 line = [point1[:2], point2[:2]]
-                self.line_data.append(line)
+                line_out.append(line)
         elif e.dxftype() is 'LWPOLYLINE':
             if not self.is_hidden(e):
                 lwpolyline = []
@@ -59,7 +60,9 @@ class DxfReader:
                     for point in points:
                         # I only want the x,y coordinates
                         lwpolyline.append(point[:2])
-                self.line_data.append(lwpolyline)
+                    if e.closed:
+                        lwpolyline.append(lwpolyline[0])
+                line_out.append(lwpolyline)
         elif e.dxftype() is 'POLYLINE':
             # POLYLINE points are saved as a list of vertices
             if not self.is_hidden(e):
@@ -68,7 +71,9 @@ class DxfReader:
                 for vertex in vertices:
                     point = vertex.dxf.location[:2]
                     polyline.append(point)
-                self.line_data.append(polyline)
+                if e.is_closed:
+                    polyline.append(polyline[0])
+                line_out.append(polyline)
         elif e.dxftype() is 'HATCH':
             # TODO extract pattern!
             if not self.is_hidden(e):
@@ -78,14 +83,14 @@ class DxfReader:
                         for vertex in path.vertices:
                             point = list(vertex[:2])
                             polyline.append(point)
-                        self.line_data.append(polyline)
+                        line_out.append(polyline)
                     elif path.PATH_TYPE is 'EdgePath':
                         for edge in path.edges:
                             if edge.EDGE_TYPE is 'LineEdge':
                                 point1 = edge.start
                                 point2 = edge.end
                                 line = [point1[:2], point2[:2]]
-                                self.line_data.append(line)
+                                line_out.append(line)
                             else:
                                 print("unrecognized edge type: " + str(edge.EDGE_TYPE))
                     else:
@@ -107,7 +112,7 @@ class DxfReader:
                         curr_point = point
                         line = [prev_point, curr_point]
                         prev_point = curr_point
-                        self.line_data.append(line)
+                        line_out.append(line)
                     step += 1
         elif e.dxftype() is 'CIRCLE':
             if not self.is_hidden(e):
@@ -123,16 +128,18 @@ class DxfReader:
                         curr_point = point
                         line = [prev_point, curr_point]
                         prev_point = curr_point
-                        self.line_data.append(line)
+                        line_out.append(line)
                     step += 1
         elif e.dxftype() is 'POINT':
             if not self.is_hidden(e):
                 # TODO finish and plot
                 self.point_data.append(list(e.dxf.location[:2]))
         elif e.dxftype() is 'INSERT':
-            # Get name of block it's inserting
-            pass
-
+            block = self.doc.blocks[e.dxf.name]
+            for b_e in block:
+                lines = self.entity2line(b_e)
+                for line in lines:
+                    line_out.append(line)
         else:
             if not self.unrecognized_types:
                 self.unrecognized_types.append([e.dxftype(), 1])
@@ -141,13 +148,38 @@ class DxfReader:
                     self.unrecognized_types[list(zip(*self.unrecognized_types))[0].index(e.dxftype())][1] += 1
                 else:
                     self.unrecognized_types.append([e.dxftype(), 1])
+        return line_out
 
     def extract_data(self):
         # Would be cool to preallocate memory to the data list
-
         for e in self.msp:
-            self.entity2line(e)
-
+            lines = self.entity2line(e)
+            if lines:
+                if e.dxftype() is 'INSERT':
+                    rotation = e.dxf.rotation
+                    x_scale = e.dxf.xscale
+                    y_scale = e.dxf.yscale
+                    position = e.dxf.insert[:2]
+                    for line in lines:
+                        t_line = []
+                        for point in line:
+                            point = list(point)
+                            # Scale
+                            point[0] = point[0] * x_scale
+                            point[1] = point[1] * y_scale
+                            # Rotate
+                            point[0] = point[0] * math.cos(math.radians(rotation)) - \
+                                       point[1] * math.sin(math.radians(rotation))
+                            point[1] = point[1] * math.cos(math.radians(rotation)) + \
+                                       point[0] * math.sin(math.radians(rotation))
+                            # Translate
+                            point[0] += position[0]
+                            point[1] += position[1]
+                            t_line.append(tuple(point))
+                        self.line_data.append(t_line)
+                else:
+                    for line in lines:
+                        self.line_data.append(line)
         for unrecognized_type in self.unrecognized_types:
             print("Type " + str(unrecognized_type[0]) + " not recognized. Nr. of instances: "
                   + str(unrecognized_type[1]))
