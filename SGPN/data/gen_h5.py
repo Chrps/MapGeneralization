@@ -18,6 +18,8 @@ if not os.path.exists(output_dir):
 output_room_filelist = os.path.join(PointCloudPath, 'room_filelist.txt')
 fout_room = open(output_room_filelist, 'w')
 train_list = open('generated_pointclouds/train_hdf5_file_list.txt', 'w')
+valid_list = open('generated_pointclouds/valid_hdf5_file_list.txt', 'w')
+test_list = open('generated_pointclouds/test_hdf5_file_list.txt', 'w')
 
 sample_cnt = 0
 for i in range(0, len(data_label_files)):
@@ -38,7 +40,13 @@ for i in range(0, len(data_label_files)):
                               label,
                               inslabel,
                               data_dtype, label_dtype)
-    train_list.write('data/generated_pointclouds/training_data/' + fname + '.h5' + '\n')
+    if i < len(data_label_files)*0.7:
+        train_list.write('data/generated_pointclouds/training_data/' + fname + '.h5' + '\n')
+    elif len(data_label_files)*0.85 > i >= len(data_label_files)*0.7:
+        valid_list.write('data/generated_pointclouds/training_data/' + fname + '.h5' + '\n')
+    else:
+        test_list.write('data/generated_pointclouds/training_data/' + fname + '.h5' + '\n')
+
 
 fout_room.close()
 train_list.close()

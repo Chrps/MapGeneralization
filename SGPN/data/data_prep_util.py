@@ -92,7 +92,7 @@ def save_h5(h5_filename, data, label, data_dtype='uint8', label_dtype='uint8'):
     h5_fout.close()
 
 def save_h5ins(h5_filename, data, label, gid,  data_dtype='uint8', label_dtype='uint8'):
-    h5_fout = h5py.File(h5_filename)
+    h5_fout = h5py.File(h5_filename, 'w')
     h5_fout.create_dataset(
             'data', data=data,
             compression='gzip', compression_opts=4,
