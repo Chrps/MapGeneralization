@@ -1,0 +1,2 @@
+SGPN/data/generated_pointclouds/training_data/room_0.h5
+SGPN/data/generated_pointclouds/training_data/room_1.h5
