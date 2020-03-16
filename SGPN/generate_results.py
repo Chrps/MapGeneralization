@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--gpu', type=str, default="3", help='GPU to use [default: GPU 1]')
 parser.add_argument('--verbose', action='store_true', help='if specified, use depthconv')
-parser.add_argument('--input_list', type=str, default='data/generated_pointclouds/generate_results_hdf5.txt', help='Validation data list')
+parser.add_argument('--input_list', type=str, default='data/generated_pointclouds/test_hdf5_file_list.txt', help='Validation data list')
 parser.add_argument('--restore_dir', type=str, default='checkpoint/sem_pretrained', help='Directory that stores all training logs and trained models')
 
 FLAGS = parser.parse_args()
@@ -51,8 +51,8 @@ label_bin = np.loadtxt(os.path.join(RESTORE_DIR, 'pergroup_thres.txt'))
 min_num_pts_in_group = np.loadtxt(os.path.join(RESTORE_DIR, 'mingroupsize.txt'))
 
 # MAIN SCRIPT
-POINT_NUM = 50 # the max number of points in the all testing data shapes
-BATCH_SIZE  = 1
+POINT_NUM = 50  # the max number of points in the all testing data shapes
+BATCH_SIZE = 1
 NUM_GROUPS = 50
 NUM_CATEGORY = 2
 
@@ -204,14 +204,10 @@ def predict():
             f_scene.close()
 
             #if output_verbose:
-            output_color_point_cloud(pts[:, 6:], group_pred_final.astype(np.int32),
-                    os.path.join(OUTPUT_DIR, 'grouppred.obj'))
             output_color_point_cloud(pts[:, 6:], seg_pred.astype(np.int32),
-                                     os.path.join(OUTPUT_DIR, 'segpred.obj'))
-            #output_color_point_cloud(pts[:, 6:], seg_pred.astype(np.int32),
-                                     #os.path.join(OUTPUT_DIR, '%s_segpred.obj' % (obj_fn)))
-            #output_color_point_cloud(pts[:, 6:], group_pred_final.astype(np.int32),
-                                     #os.path.join(OUTPUT_DIR, '%s_grouppred.obj' % (obj_fn)))
+                                     os.path.join(OUTPUT_DIR, '%s_segpred.obj' % (basefilename)))
+            output_color_point_cloud(pts[:, 6:], group_pred_final.astype(np.int32),
+                                     os.path.join(OUTPUT_DIR, '%s_grouppred.obj' % (basefilename)))
 
 
 with tf.Graph().as_default():
