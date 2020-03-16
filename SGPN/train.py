@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser()
 # Experiment Settings
 parser.add_argument('--gpu', type=str, default="0", help='GPU to use [default: GPU 1]')
 parser.add_argument('--wd', type=float, default=0.9, help='Weight Decay [Default: 0.0]')
-parser.add_argument('--epoch', type=int, default=5, help='Number of epochs [default: 50]')
+parser.add_argument('--epoch', type=int, default=10, help='Number of epochs [default: 50]')
 parser.add_argument('--batch', type=int, default=32, help='Batch Size during training [default: 4]')
 parser.add_argument('--point_num', type=int, default=50, help='Point Number')
 parser.add_argument('--group_num', type=int, default=50, help='Maximum Group Number in one pc')
@@ -173,8 +173,6 @@ def train():
         all_seg = []
         for i in range(num_train_file):
             cur_train_filename = train_file_list[train_file_idx[i]]
-            # printout(flog, 'Loading train file ' + cur_train_filename)
-            cur_train_filename = r"D:/University Stuff/Master's Thesis/Programming Projects/SGPN/" + cur_train_filename
             cur_data, cur_group, _, cur_seg = provider.loadDataFile_with_groupseglabel_stanfordindoor(cur_train_filename)
             all_data += [cur_data]
             all_group += [cur_group]

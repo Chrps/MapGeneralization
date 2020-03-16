@@ -38,7 +38,7 @@ for i in range(0, len(data_label_files)):
                               label,
                               inslabel,
                               data_dtype, label_dtype)
-    train_list.write('SGPN/data/generated_pointclouds/training_data/' + fname + '.h5' + '\n')
+    train_list.write('data/generated_pointclouds/training_data/' + fname + '.h5' + '\n')
 
 fout_room.close()
 train_list.close()
