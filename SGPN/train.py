@@ -21,18 +21,20 @@ parser = argparse.ArgumentParser()
 # Experiment Settings
 parser.add_argument('--gpu', type=str, default="0", help='GPU to use [default: GPU 1]')
 parser.add_argument('--wd', type=float, default=0.9, help='Weight Decay [Default: 0.0]')
-parser.add_argument('--epoch', type=int, default=10, help='Number of epochs [default: 50]')
+parser.add_argument('--epoch', type=int, default=200, help='Number of epochs [default: 50]')
 parser.add_argument('--batch', type=int, default=32, help='Batch Size during training [default: 4]')
-parser.add_argument('--point_num', type=int, default=50, help='Point Number')
+parser.add_argument('--point_num', type=int, default=200, help='Point Number')
 parser.add_argument('--group_num', type=int, default=50, help='Maximum Group Number in one pc')
 parser.add_argument('--cate_num', type=int, default=2, help='Number of categories')
-parser.add_argument('--margin_same', type=float, default=10., help='Double hinge loss margin: same semantic')
-parser.add_argument('--margin_diff', type=float, default=80., help='Double hinge loss margin: different semantic')
+#parser.add_argument('--margin_same', type=float, default=10., help='Double hinge loss margin: same semantic')
+#parser.add_argument('--margin_diff', type=float, default=80., help='Double hinge loss margin: different semantic')
+parser.add_argument('--margin_same', type=float, default=1.0, help='Double hinge loss margin: same semantic')
+parser.add_argument('--margin_diff', type=float, default=2.0, help='Double hinge loss margin: different semantic')
 
 # Input&Output Settings
-parser.add_argument('--output_dir', type=str, default='checkpoint/sem_pretrained', help='Directory that stores all training logs and trained models')
+parser.add_argument('--output_dir', type=str, default='checkpoint/plz_work', help='Directory that stores all training logs and trained models')
 parser.add_argument('--input_list', type=str, default='data/generated_pointclouds/train_hdf5_file_list.txt', help='Input data list file')
-parser.add_argument('--restore_model', type=str, default='checkpoint/sem_p', help='Pretrained model')
+parser.add_argument('--restore_model', type=str, default='checkpoint/sem_pretrained', help='Pretrained model')
 
 FLAGS = parser.parse_args()
 

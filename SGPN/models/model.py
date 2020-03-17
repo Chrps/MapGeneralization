@@ -10,8 +10,8 @@ import tensorflow as tf
 import numpy as np
 import sys
 sys.path.insert(0, os.getcwd())
-from models import tf_util
-from models import pointnet
+from SGPN.models import tf_util
+from SGPN.models import pointnet
 
 
 NUM_CATEGORY = 2
@@ -220,8 +220,8 @@ def get_loss(net_output, labels, alpha=10., margin=[1.,2.]):
 
     confidence_loss = tf.reduce_mean(tf.squared_difference(confidence_label, tf.squeeze(pred_confidence_logits,[2])))
 
-    #loss = simmat_loss + ptsseg_loss + confidence_loss
-    loss = ptsseg_loss
+    loss = simmat_loss + ptsseg_loss + confidence_loss
+    #loss = ptsseg_loss
     #loss = simmat_loss
 
     grouperr = tf.abs(tf.cast(ng, tf.float32) - tf.cast(ng_label, tf.float32))

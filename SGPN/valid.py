@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', type=str, default="0", help='GPU to use [default: GPU 1]')
 parser.add_argument('--verbose', action='store_true', help='if specified, use depthconv')
 parser.add_argument('--input_list', type=str, default='data/generated_pointclouds/valid_hdf5_file_list.txt', help='Validation data list')
-parser.add_argument('--restore_dir', type=str, default='checkpoint/sem_pretrained', help='Directory that stores all training logs and trained models')
+parser.add_argument('--restore_dir', type=str, default='checkpoint/plz_work', help='Directory that stores all training logs and trained models')
 FLAGS = parser.parse_args()
 
 PRETRAINED_MODEL_PATH = os.path.join(FLAGS.restore_dir,'trained_models/')
@@ -27,7 +27,7 @@ if not os.path.exists(OUTPUT_DIR):
 OUTPUT_VERBOSE = FLAGS.verbose  # If true, output similarity
 
 # MAIN SCRIPT
-POINT_NUM = 50 # the max number of points in the all testing data shapes
+POINT_NUM = 200 # the max number of points in the all testing data shapes
 BATCH_SIZE = 1
 NUM_GROUPS = 50
 NUM_CATEGORY = 2

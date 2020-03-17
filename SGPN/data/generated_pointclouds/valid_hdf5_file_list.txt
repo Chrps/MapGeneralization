@@ -1,1 +1,15 @@
-data/generated_pointclouds/training_data/room_1.h5
+data/generated_pointclouds/training_data/room_840.h5
+data/generated_pointclouds/training_data/room_841.h5
+data/generated_pointclouds/training_data/room_842.h5
+data/generated_pointclouds/training_data/room_843.h5
+data/generated_pointclouds/training_data/room_844.h5
+data/generated_pointclouds/training_data/room_845.h5
+data/generated_pointclouds/training_data/room_846.h5
+data/generated_pointclouds/training_data/room_847.h5
+data/generated_pointclouds/training_data/room_848.h5
+data/generated_pointclouds/training_data/room_849.h5
+data/generated_pointclouds/training_data/room_850.h5
+data/generated_pointclouds/training_data/room_851.h5
+data/generated_pointclouds/training_data/room_852.h5
+data/generated_pointclouds/training_data/room_853.h5
+

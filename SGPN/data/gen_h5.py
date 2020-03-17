@@ -5,7 +5,7 @@ from SGPN.data import indoor3d_util
 
 # Constants
 PointCloudPath = 'generated_pointclouds'
-NUM_POINT = 50
+NUM_POINT = 200
 data_dtype = 'float32'
 label_dtype = 'int32'
 

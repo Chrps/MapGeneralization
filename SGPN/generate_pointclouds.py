@@ -190,7 +190,7 @@ def room_creator():
 
 
 def main():
-    nr_rooms = 2
+    nr_rooms = 1200
     #nr_samples = 1000
     all_room_names = open('data/generated_pointclouds/all_room_names.txt', "w+")
 

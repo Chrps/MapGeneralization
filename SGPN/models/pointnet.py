@@ -8,7 +8,7 @@ import sys
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
 sys.path.append(os.path.join(ROOT_DIR, 'utils'))
-from models import tf_util
+from SGPN.models import tf_util
 
 
 def placeholder_inputs(batch_size, num_point):
@@ -68,7 +68,7 @@ def get_loss(pred, label):
 
 if __name__ == "__main__":
     with tf.Graph().as_default():
-        a = tf.placeholder(tf.float32, shape=(32, 50, 9))
+        a = tf.placeholder(tf.float32, shape=(32, 200, 9))
         net = get_model(a, tf.constant(True))
         with tf.Session() as sess:
             init = tf.global_variables_initializer()
@@ -76,5 +76,5 @@ if __name__ == "__main__":
             start = time.time()
             for i in range(100):
                 print(i)
-                sess.run(net, feed_dict={a: np.random.rand(32, 50, 9)})
+                sess.run(net, feed_dict={a: np.random.rand(32, 200, 9)})
             print(time.time() - start)

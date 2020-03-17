@@ -1,1 +1,4 @@
-data/generated_pointclouds/training_data/room_1.h5
+data/generated_pointclouds/training_data/room_20.h5
+data/generated_pointclouds/training_data/room_21.h5
+data/generated_pointclouds/training_data/room_22.h5
+data/generated_pointclouds/training_data/room_23.h5
