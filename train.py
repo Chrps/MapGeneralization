@@ -9,8 +9,9 @@ import numpy as np
 
 INPUT_SIZE = 3273
 NR_EPOCHS = 60
-PATH = "data/graphs/test_graph.gpickle"
-VISUALIZE = True
+TRAIN_PATH = 'data/graphs/test_graph.gpickle'
+CHKPT_PATH = 'checkpoint/model.pth'
+VISUALIZE = False
 
 # Define the message and reduce function
 # NOTE: We ignore the GCN's normalization constant c_ij for this tutorial.
@@ -101,7 +102,7 @@ def draw(i, all_logits, ax, nx_G, positions):
 
 def main():
     #G = build_karate_club_graph()
-    nxg = nx.read_gpickle(PATH)
+    nxg = nx.read_gpickle(TRAIN_PATH)
 
     #label_dict = nx.get_node_attributes(nxg, 'label')
     #labels = list(label_dict.values())
@@ -145,9 +146,10 @@ def main():
         optimizer.step()
 
         print('Epoch %d | Loss: %.4f' % (epoch, loss.item()))
-    inputs_test = torch.eye(INPUT_SIZE)
-    output = net(G, inputs_test)
-    results = output.detach()
+    
+    # Save the model
+    torch.save(net.state_dict(), CHKPT_PATH)
+
     if VISUALIZE:
         fig = plt.figure(dpi=150)
         fig.clf()
