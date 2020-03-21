@@ -1,1 +1,0 @@
-data/generated_pointclouds/training_data/room_1.h5

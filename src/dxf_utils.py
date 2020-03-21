@@ -12,6 +12,8 @@ import matplotlib
 matplotlib.use('TKAgg')
 import math
 import networkx as nx
+import open3d as o3d
+import numpy as np
 
 class Node:
     '''Class for keeping track of nodes in network'''
@@ -59,7 +61,7 @@ class DxfReader:
                 line_out.append(line)
         elif e.dxftype() is 'LWPOLYLINE':
             if not self.is_hidden(e):
-                print('Linetype:', e.dxf.linetype)
+                # TODO: different line types?
                 lwpolyline = []
                 with e.points() as points:
                     # points is a list of points with the format = (x, y, [start_width, [end_width, [bulge]]])
@@ -209,9 +211,9 @@ class DxfReader:
         ax.autoscale()
         plt.show()
 
-    def convert_data_to_graph(self, visualize=True):
+    def convert_data_to_graph(self, visualize=True, save=True):
         # Create network graph
-        G = nx.Graph()
+        self.G = nx.Graph()
         list_of_nodes = []
         current_id = 0
 
@@ -242,7 +244,7 @@ class DxfReader:
                         node.connected_to.append(connectivity_list[con_idx + 1])
 
         for node in list_of_nodes:
-            G.add_node(node.id, pos=node.coordinate)
+            self.G.add_node(node.id, pos=node.coordinate)
         for node in list_of_nodes:
             if not node.connected_to:
                 pass
@@ -254,12 +256,38 @@ class DxfReader:
                     weight = np.linalg.norm(p0 - p1)
                     G.add_edge(node.id, node_connection, weight=weight)
                     '''
-                    G.add_edge(node.id, node_connection)
+                    self.G.add_edge(node.id, node_connection)
         if visualize:
-            pos = nx.get_node_attributes(G, 'pos')
+            pos = nx.get_node_attributes(self.G, 'pos')
             w, h = figaspect(5 / 3)
             fig, ax = plt.subplots(figsize=(w, h))
-            nx.draw(G, pos, node_size=20, ax=ax)
+            nx.draw(self.G, pos, node_size=20, ax=ax)
             plt.show()
 
-        return G
+        if save:
+            nx.write_gpickle(self.G, "data/graphs/test_graph.gpickle")
+            #nx.write_gexf(self.G, "data/graphs/test_graph.gexf")
+            #nx.read_gexf("data/graphds/test_graph.gexf")
+
+        return self.G
+
+    def load_graph(self, gexf_file_path, visualize=True):
+        self.G = nx.read_gpickle("data/graphs/test_graph.gpickle")
+        if visualize:
+            pos = nx.get_node_attributes(self.G, 'pos')
+            w, h = figaspect(5 / 3)
+            fig, ax = plt.subplots(figsize=(w, h))
+            nx.draw(self.G, pos, node_size=20, ax=ax)
+            plt.show()
+
+
+    def graph2pcd(self):
+        xyz = np.empty((0, 3), int)
+        for idx in range(len(self.G.nodes)):
+            x, y = self.G._node[idx]['pos']
+            xyz = np.append(xyz, np.array([[x, y, 0]]), axis=0)
+
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(xyz)
+        o3d.io.write_point_cloud('data/pcd/test_pointcloud.pcd', pcd)
+
