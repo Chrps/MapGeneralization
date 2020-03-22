@@ -3,12 +3,16 @@ import networkx as nx
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
+import numpy as np
+import random
+from sampler import GraphSampler
+import warnings
+warnings.filterwarnings('ignore')
 
-TEST_PATH = 'data/graphs/test_graph.gpickle'
+TEST_PATH = 'data/graphs/public_toilet2.gpickle'
 CHKPT_PATH = 'checkpoint/model.pth'
 INPUT_SIZE = 3273
 VISUALIZE = True
-
 
 # Define the message and reduce function
 # NOTE: We ignore the GCN's normalization constant c_ij for this tutorial.
@@ -71,9 +75,14 @@ def draw(results, ax, nx_G, positions):
 def main():
     # Load Test data
     nxg = nx.read_gpickle(TEST_PATH)
-    positions = nx.get_node_attributes(nxg, 'pos')
+
+    graph_sampler = GraphSampler()
+    #nxg_sub = graph_sampler.up_sampler(nxg, INPUT_SIZE)
+    nxg_sub = graph_sampler.down_sampler(nxg, INPUT_SIZE)
+
+    positions = nx.get_node_attributes(nxg_sub, 'pos')
     G = dgl.DGLGraph()
-    G.from_networkx(nxg, node_attrs=['pos'])
+    G.from_networkx(nxg_sub, node_attrs=['pos'])
 
     # Load the model
     model = GCN(INPUT_SIZE, 5, 2)
@@ -100,7 +109,7 @@ def main():
         fig = plt.figure(dpi=150)
         fig.clf()
         ax = fig.subplots()
-        draw(results, ax, nxg, positions)  # draw the results
+        draw(results, ax, nxg_sub, positions)  # draw the results
 
         plt.show()
 

@@ -14,6 +14,7 @@ import math
 import networkx as nx
 import open3d as o3d
 import numpy as np
+import os
 
 class Node:
     '''Class for keeping track of nodes in network'''
@@ -27,6 +28,7 @@ class DxfReader:
     Class representing...
     """
     def __init__(self, dxf_file_path):
+        self.dxf_file_path = dxf_file_path
         extension = os.path.splitext(dxf_file_path)[1]
         if extension != '.dxf':
             raise Exception('File given is not of DXF type (.dxf)')
@@ -265,14 +267,18 @@ class DxfReader:
             plt.show()
 
         if save:
-            nx.write_gpickle(self.G, "data/graphs/test_graph.gpickle")
+            file_name = os.path.basename(self.dxf_file_path)
+            file_name = os.path.splitext(file_name)[0]
+            nx.write_gpickle(self.G, "data/graphs/" + file_name + ".gpickle")
             #nx.write_gexf(self.G, "data/graphs/test_graph.gexf")
             #nx.read_gexf("data/graphds/test_graph.gexf")
 
         return self.G
 
     def load_graph(self, gexf_file_path, visualize=True):
-        self.G = nx.read_gpickle("data/graphs/test_graph.gpickle")
+        file_name = os.path.basename(self.dxf_file_path)
+        file_name = os.path.splitext(file_name)[0]
+        self.G = nx.read_gpickle("data/graphs/" + file_name + ".gpickle")
         if visualize:
             pos = nx.get_node_attributes(self.G, 'pos')
             w, h = figaspect(5 / 3)

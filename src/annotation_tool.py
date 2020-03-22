@@ -1,7 +1,9 @@
 import numpy as np
-
 from matplotlib.widgets import LassoSelector
 from matplotlib.path import Path
+import os
+
+GRAPH_PATH = "../data/graphs/public_toilet2.gpickle"
 
 class SelectFromCollection(object):
     """Select indices from a matplotlib collection using `LassoSelector`.
@@ -69,7 +71,7 @@ if __name__ == '__main__':
     #data = np.random.rand(10000, 2)
 
     import networkx as nx
-    G = nx.read_gpickle("../data/graphs/test_graph.gpickle")
+    G = nx.read_gpickle(GRAPH_PATH)
     graph_data = nx.get_node_attributes(G, 'pos')
     data = np.array(tuple(graph_data.values()))
     print(data)
@@ -108,13 +110,15 @@ if __name__ == '__main__':
                 instance -= 1
 
             if event.key == "b":
-                np.save('../data/graph_annotations/labels_walls_and_doors.npy', labels)
+                file_name = os.path.basename(GRAPH_PATH)
+                file_name = os.path.splitext(file_name)[0]
+                np.save('../data/graph_annotations/' + file_name + '.npy', labels)
 
             if event.key == "enter":
-                print(mode)
-                print("Selected points:")
+                #print(mode)
+                #print("Selected points:")
                 #print(selector.xys[selector.ind])
-                print(selector.ind)
+                #print(selector.ind)
                 if mode == 'SELECT':
                     class_label = 1
                     np.put(instances, selector.ind, instance, mode='clip')
@@ -123,7 +127,7 @@ if __name__ == '__main__':
                     np.put(instances, selector.ind, 0, mode='clip')
                 np.put(labels, selector.ind, class_label, mode='clip')
 
-                print(instances)
+                #print(instances)
                 for idx in range(len(selector.fc)):
                     class_label = labels[idx]
                     if class_label == 1:

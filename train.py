@@ -9,9 +9,10 @@ import numpy as np
 
 INPUT_SIZE = 3273
 NR_EPOCHS = 60
-TRAIN_PATH = 'data/graphs/test_graph.gpickle'
+TRAIN_PATH = 'data/graphs/xray_room.gpickle'
+LABEL_PATH = 'data/graph_annotations/xray_room.npy'
 CHKPT_PATH = 'checkpoint/model.pth'
-VISUALIZE = False
+VISUALIZE = True
 
 # Define the message and reduce function
 # NOTE: We ignore the GCN's normalization constant c_ij for this tutorial.
@@ -44,7 +45,7 @@ class GCNLayer(nn.Module):
         # perform linear transformation
         return self.linear(h)
 
-# Define a 2-layer GCN model
+# Define a 2-layer GCN models
 class GCN(nn.Module):
     def __init__(self, in_feats, hidden_size, num_classes):
         super(GCN, self).__init__()
@@ -107,7 +108,7 @@ def main():
     #label_dict = nx.get_node_attributes(nxg, 'label')
     #labels = list(label_dict.values())
 
-    labels = list(np.load('data/graph_annotations/labels.npy'))
+    labels = list(np.load(LABEL_PATH))
     nodes = list(nxg.nodes)
     positions = nx.get_node_attributes(nxg, 'pos')
 
