@@ -113,6 +113,8 @@ class DxfReader:
                 end_angle = e.dxf.end_angle
                 radius = e.dxf.radius
                 delta_angle = end_angle - start_angle
+                if delta_angle < 0:
+                    delta_angle += 360
                 step = start_angle
                 for i in range(int(delta_angle) + 1):
                     point = [center[0] + (radius * math.cos(math.radians(step))),
