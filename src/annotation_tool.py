@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import os
 
-GRAPH_PATH = "../data/graphs/public_toilet2.gpickle"
+GRAPH_PATH = "../data/graphs/door_blocks.gpickle"
 
 class SelectFromCollection(object):
     def __init__(self, ax, collection, alpha_other=0.3):
@@ -87,6 +87,10 @@ if __name__ == '__main__':
             file_name = os.path.basename(GRAPH_PATH)
             file_name = os.path.splitext(file_name)[0]
             np.save('../data/graph_annotations/' + file_name + '.npy', labels)
+            nx.set_node_attributes(G, labels, 'label')
+            for node in G.nodes:
+                G.nodes[node]['label'] = labels[node]
+            nx.write_gpickle(G, '../data/graph_annotations/' + file_name + '_w_annotations.gpickle')
 
         if event.key == "enter":
             #print(mode)
