@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import os
 
-GRAPH_PATH = "../data/graphs/door_blocks.gpickle"
+GRAPH_PATH = "../data/graphs/MSP1-HoM-MA-XX+4-ET.gpickle"
 
 class SelectFromCollection(object):
     def __init__(self, ax, collection, alpha_other=0.3):
