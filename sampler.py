@@ -4,8 +4,9 @@ import numpy as np
 from numba import jit
 import time
 import math
-from tqdm import tqdm
+import sys
 
+# TODO should not be a class
 class GraphSampler:
 
     @staticmethod
@@ -39,7 +40,7 @@ class GraphSampler:
             nxg.remove_node(point)
         return nxg
 
-    def down_sampler(self, nxg, output_size):
+    def down_sampler(self, nxg, output_size, nr_furthest_search):
         # Get node positions
         positions = nx.get_node_attributes(nxg, 'pos')
 
@@ -47,27 +48,27 @@ class GraphSampler:
         complex_positions = []
         for position in list(positions.values()):
             complex_positions.append(complex(*position))
-        #complex_positions = np.array(complex_positions)
         # Select n points using farthest search
         # TODO: Use Voronoi method instead
         start_time = time.time()
-        selected_points = self.incremental_farthest_search(complex_positions, 1000)
+        selected_points = self.incremental_farthest_search(complex_positions, nr_furthest_search)
         print(time.time() - start_time)
         # Select the rest of the points using random sampling
         full_selected_points = list(range(0, nxg.number_of_nodes()))
         for idx in selected_points:
             full_selected_points.remove(idx)
 
-        full_selected_points = random.sample(full_selected_points, output_size - 1000)
+        full_selected_points = random.sample(full_selected_points, output_size - nr_furthest_search)
         full_selected_points = selected_points + full_selected_points
 
         nxg_sub = self.subgraph_w_retained_connections(nxg, list(full_selected_points))
+
         return nxg_sub
 
     @staticmethod
-    def up_sampler(nxg, needed_size):
+    def up_sampler(nxg, needed_size, labels=False):
         original_nr_nodes = nxg.number_of_nodes()
-        for i in tqdm(range(needed_size - original_nr_nodes)):
+        for i in range(needed_size - original_nr_nodes):
             edge_lengths = []
             edge_list = list(nxg.edges)
             # Calculate all edge lengths
@@ -88,7 +89,16 @@ class GraphSampler:
             mid_pos = ((pos2[0] + pos1[0]) / 2, (pos2[1] + pos1[1]) / 2)
 
             # Add middle point as node
-            nxg.add_node(original_nr_nodes + i + 1, pos=tuple(mid_pos), label=0)
+            if labels:
+                label1 = nxg._node[edge[0]]['label']
+                label2 = nxg._node[edge[1]]['label']
+                label = 0
+                if label1 == label2 == 1:
+                    label = 1
+                nxg.add_node(original_nr_nodes + i + 1, pos=tuple(mid_pos), label=label)
+            else:
+                nxg.add_node(original_nr_nodes + i + 1, pos=tuple(mid_pos))
+
 
             # Create edge between new node and old nodes
             nxg.add_edge(original_nr_nodes + i + 1, edge[0])
