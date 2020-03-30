@@ -1,4 +1,3 @@
 public_toilet_w_annotations.gpickle
 hotel_room_layout_w_annotations.gpickle
-public_toilet2_w_annotations.gpickle
 xray_room_w_annotations.gpickle

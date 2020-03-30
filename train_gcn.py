@@ -8,6 +8,7 @@ import networkx as nx
 import numpy as np
 import os
 import torch
+import time
 
 # Imports for DeepWalk
 import random
@@ -50,14 +51,15 @@ class Net(nn.Module):
     def __init__(self, input_size):
         super(Net, self).__init__()
         self.gcn1 = GCN(input_size, 64, F.relu)
+        self.gcn2 = GCN(64, 64, F.relu)
         # (64, 120, F.relu)
-        self.gcn2 = GCN(64, 2, None)
+        self.gcn3 = GCN(64, 2, None)
 
     def forward(self, g, features):
         x = self.gcn1(g, features)
-        # x = self.gcn1(g, features)
-        x = self.gcn2(g, x)
-        return x
+        y = self.gcn2(g, x)
+        z = self.gcn3(g, y)
+        return z
 
 
 def evaluate(model, g, features, labels, mask):
@@ -99,11 +101,11 @@ def normalize_positions(positions):
 def execute_deepwalk(nxg, file_name):
     undirected = True  # Treat graph as undirected.
     number_walks = 5  # Number of random walks to start at each node
-    walk_length = 10  # Length of the random walk started at each node
+    walk_length = 5  # Length of the random walk started at each node
     max_memory_data_size = 1000000000  # Size to start dumping walks to disk, instead of keeping them in memory
     seed = 0  # Seed for random walk generator
     representation_size = 64  # Number of latent dimensions to learn for each node
-    window_size = 5  # Window size of skipgram model
+    window_size = 10  # Window size of skipgram model
     workers = 1  # Number of parallel processes
     vertex_freq_degree = False  # Use vertex degree to estimate the frequency of nodes in the random walks. This option is faster than calculating the vocabulary
 
@@ -239,7 +241,8 @@ def batch_graphs(data_list, folder):
     torch.cat(all_embedding, out=conc_embedding)
 
     # Define the features a one large tensor
-    features = torch.cat((conc_all_norm_deg, all_norm_pos, all_norm_identity, conc_embedding), 1)
+    #features = torch.cat((conc_all_norm_deg, all_norm_pos, all_norm_identity, conc_embedding), 1)
+    features = torch.cat((all_norm_pos, conc_embedding), 1)
     #features = conc_embedding
 
     return batched_graph, all_labels, features
@@ -251,8 +254,11 @@ def main():
 
     # Load your training data in the form of a batched graph (essentially a giant graph)
     g, labels, features = batch_graphs('data/train_file_list.txt', 'graph_annotations')
-    train_mask = torch.BoolTensor(np.ones(g.number_of_nodes())) # Mask tells which nodes are used for training (so all)
-
+    #g, labels, features = batch_graphs('data/synth_graphs/train_file_list.txt', 'synth_graphs/training')
+    train_mask = torch.BoolTensor(np.ones(g.number_of_nodes()))  # Mask tells which nodes are used for training (so all)
+    test_g, test_labels, test_features = batch_graphs('data/test_file_list.txt', 'graph_annotations')
+    #test_g, test_labels, test_features = batch_graphs('data/synth_graphs/test_file_list.txt', 'synth_graphs/testing')
+    test_mask = torch.BoolTensor(np.ones(test_g.number_of_nodes()))
     # Print how many door vs non-door instances there are
     non_door_instances = 0
     door_instances = 0
@@ -269,15 +275,17 @@ def main():
     print(net)
 
     # Define loss weights for each class (door vs non-door instances, gets printed in beginning of run)
-    weights = [0.1, 1.0]
+    weights = [0.2, 1.0]
     weights = torch.FloatTensor(weights)
 
     # Define optimizer with learning rate
     optimizer = th.optim.Adam(net.parameters(), lr=1e-3)
 
     # Train for specified epochs
+    dur = []
     for epoch in range(NUM_EPOCHS):
-
+        if epoch >= 3:
+            t0 = time.time()
         net.train()
         logits = net(g, features)
         logp = F.log_softmax(logits, 1)
@@ -288,11 +296,12 @@ def main():
         loss.backward()
         optimizer.step()
 
-        # TODO
-        # Incorporate some test accuracy here because loss is a bit user defined from weights (not 100% reliable)
-        #acc = evaluate(net, g, features, labels, test_mask)
-        #print("Epoch {:05d} | Loss {:.4f} | Test Acc {:.4f} | Time(s) {:.4f}".format(
-            #epoch, loss.item(), acc, np.mean(dur)))
+        if epoch >= 3:
+            dur.append(time.time() - t0)
+
+        acc = evaluate(net, test_g, test_features, test_labels, test_mask)
+        print("Epoch {:05d} | Loss {:.4f} | Test Acc {:.4f} | Time(s) {:.4f}".format(
+            epoch, loss.item(), acc, np.mean(dur)))
 
     # Save model when done training
     torch.save(net.state_dict(), CHKPT_PATH)
