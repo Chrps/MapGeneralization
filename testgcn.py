@@ -50,13 +50,25 @@ class GCN(nn.Module):
 class Net(nn.Module):
     def __init__(self, input_size):
         super(Net, self).__init__()
-        self.gcn1 = GCN(input_size, 64, F.relu)
-        self.gcn2 = GCN(64, 2, None)
+        '''
+        self.gcn1 = GCN(input_size, 10, F.relu)
+        self.gcn2 = GCN(10, 10, F.relu)
+        # (64, 120, F.relu)
+        self.gcn3 = GCN(10, 2, None)
+        '''
+        self.gcn1 = GCN(input_size, 128, F.relu)
+        self.gcn2 = GCN(128, 2, None)
 
     def forward(self, g, features):
+        '''
         x = self.gcn1(g, features)
-        x = self.gcn2(g, x)
-        return x
+        y = self.gcn2(g, x)
+        z = self.gcn3(g, y)
+        return z
+        '''
+        x = self.gcn1(g, features)
+        y = self.gcn2(g, x)
+        return y
 
 
 def evaluate(model, g, features, labels, mask):
@@ -97,11 +109,11 @@ def normalize_positions(positions):
 def execute_deepwalk(nxg, file_name):
     undirected = True  # Treat graph as undirected.
     number_walks = 5  # Number of random walks to start at each node
-    walk_length = 10  # Length of the random walk started at each node
+    walk_length = 5  # Length of the random walk started at each node
     max_memory_data_size = 1000000000  # Size to start dumping walks to disk, instead of keeping them in memory
     seed = 0  # Seed for random walk generator
     representation_size = 64  # Number of latent dimensions to learn for each node
-    window_size = 5  # Window size of skipgram model
+    window_size = 10  # Window size of skipgram model
     workers = 1  # Number of parallel processes
     vertex_freq_degree = False  # Use vertex degree to estimate the frequency of nodes in the random walks. This option is faster than calculating the vocabulary
 
@@ -171,6 +183,14 @@ def read_embedding(file_name):
         embedding_feat = sorted(embedding_feat, key=lambda x: x[0])
         for idx, row in enumerate(embedding_feat):
             embedding_feat[idx] = np.delete(row, 0)
+        all_embedding_feats = np.concatenate(embedding_feat, axis=0)
+        max_emb = all_embedding_feats.max()
+        min_emb = all_embedding_feats.min()
+        for idx_l, list in enumerate(embedding_feat):
+            for idx_e, element in enumerate(list):
+                embedding_feat[idx_l][idx_e] = (element + abs(min_emb)) / (max_emb + abs(min_emb))
+
+
         embedding_feat = torch.FloatTensor(embedding_feat)
 
     return embedding_feat
@@ -195,8 +215,10 @@ def get_features(graph, nxg, file_name, positions):
     number_emb_feat = execute_deepwalk(nxg, file_name)
     embedding_feat = read_embedding(file_name)
     # Define the features as one large tensor
-    features = torch.cat((norm_deg, norm_pos, norm_identity, embedding_feat), 1)
+    #features = torch.cat((norm_deg, norm_pos, norm_identity, embedding_feat), 1)
+    features = torch.cat((norm_deg, embedding_feat), 1)
     #features = embedding_feat
+    #features = norm_deg
 
     return features
 
@@ -217,7 +239,9 @@ def draw(results, ax, nx_G, positions):
 
 
 def main():
-    TEST_PATH = 'data/graph_annotations/hotel_room_Layout_w_annotations.gpickle'
+    TEST_PATH = 'data/graph_annotations/xray_room_w_annotations.gpickle'
+    #TEST_PATH = 'data/synth_graphs/testing/test_graph_2.pickle'
+    #TEST_PATH = 'data/synth_graphs/testing/test_graph_34.pickle'
     CHKPT_PATH = 'checkpoint/model_gcn.pth'
     VISUALIZE = True
 

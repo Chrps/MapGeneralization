@@ -50,16 +50,26 @@ class GCN(nn.Module):
 class Net(nn.Module):
     def __init__(self, input_size):
         super(Net, self).__init__()
-        self.gcn1 = GCN(input_size, 64, F.relu)
-        self.gcn2 = GCN(64, 64, F.relu)
+        '''
+        self.gcn1 = GCN(input_size, 10, F.relu)
+        self.gcn2 = GCN(10, 10, F.relu)
         # (64, 120, F.relu)
-        self.gcn3 = GCN(64, 2, None)
+        self.gcn3 = GCN(10, 2, None)
+        '''
+        self.gcn1 = GCN(input_size, 64, F.relu)
+        self.gcn2 = GCN(64, 2, None)
 
     def forward(self, g, features):
+        '''
         x = self.gcn1(g, features)
         y = self.gcn2(g, x)
         z = self.gcn3(g, y)
         return z
+        '''
+        x = self.gcn1(g, features)
+        y = self.gcn2(g, x)
+        return y
+
 
 
 def evaluate(model, g, features, labels, mask):
@@ -69,8 +79,29 @@ def evaluate(model, g, features, labels, mask):
         logits = logits[mask]
         labels = labels[mask]
         _, indices = th.max(logits, dim=1)
-        correct = th.sum(indices == labels)
-        return correct.item() * 1.0 / len(labels)
+        # correct = th.sum(indices == labels)
+        # return correct.item() * 1.0 / len(labels)
+        indices = indices.numpy()
+        labels = labels.numpy()
+        door_counter = 0
+        doors_correct = 0
+        for idx, pred_label in enumerate(indices):
+            if labels[idx] == 1:
+                door_counter += 1
+            if labels[idx] == 1 and pred_label == 1:
+                doors_correct += 1
+        non_door_counter = 0
+        non_doors_correct = 0
+        for idx, pred_label in enumerate(indices):
+            if labels[idx] == 0:
+                non_door_counter += 1
+            if labels[idx] == 0 and pred_label == 0:
+                non_doors_correct += 1
+
+        door_acc = float(doors_correct)/float(door_counter)
+        non_door_acc = float(non_doors_correct) / float(non_door_counter)
+        return door_acc, non_door_acc
+
 
 
 def normalize_positions(positions):
@@ -101,10 +132,10 @@ def normalize_positions(positions):
 def execute_deepwalk(nxg, file_name):
     undirected = True  # Treat graph as undirected.
     number_walks = 5  # Number of random walks to start at each node
-    walk_length = 5  # Length of the random walk started at each node
+    walk_length = 4  # Length of the random walk started at each node
     max_memory_data_size = 1000000000  # Size to start dumping walks to disk, instead of keeping them in memory
     seed = 0  # Seed for random walk generator
-    representation_size = 64  # Number of latent dimensions to learn for each node
+    representation_size = 10  # Number of latent dimensions to learn for each node
     window_size = 10  # Window size of skipgram model
     workers = 1  # Number of parallel processes
     vertex_freq_degree = False  # Use vertex degree to estimate the frequency of nodes in the random walks. This option is faster than calculating the vocabulary
@@ -175,6 +206,14 @@ def read_embedding(file_name):
         embedding_feat = sorted(embedding_feat, key=lambda x: x[0])
         for idx, row in enumerate(embedding_feat):
             embedding_feat[idx] = np.delete(row, 0)
+        all_embedding_feats = np.concatenate(embedding_feat, axis=0)
+        max_emb = all_embedding_feats.max()
+        min_emb = all_embedding_feats.min()
+        for idx_l, list in enumerate(embedding_feat):
+            for idx_e, element in enumerate(list):
+                embedding_feat[idx_l][idx_e] = (element + abs(min_emb)) / (max_emb + abs(min_emb))
+
+
         embedding_feat = torch.FloatTensor(embedding_feat)
 
     return embedding_feat
@@ -242,15 +281,16 @@ def batch_graphs(data_list, folder):
 
     # Define the features a one large tensor
     #features = torch.cat((conc_all_norm_deg, all_norm_pos, all_norm_identity, conc_embedding), 1)
-    features = torch.cat((all_norm_pos, conc_embedding), 1)
+    features = torch.cat((conc_all_norm_deg, conc_embedding), 1)
     #features = conc_embedding
+    #features = all_norm_pos
 
     return batched_graph, all_labels, features
 
 
 def main():
     CHKPT_PATH = 'checkpoint/model_gcn.pth'
-    NUM_EPOCHS = 400
+    NUM_EPOCHS = 600
 
     # Load your training data in the form of a batched graph (essentially a giant graph)
     g, labels, features = batch_graphs('data/train_file_list.txt', 'graph_annotations')
@@ -275,7 +315,7 @@ def main():
     print(net)
 
     # Define loss weights for each class (door vs non-door instances, gets printed in beginning of run)
-    weights = [0.2, 1.0]
+    weights = [0.01, 1.0]
     weights = torch.FloatTensor(weights)
 
     # Define optimizer with learning rate
@@ -299,9 +339,9 @@ def main():
         if epoch >= 3:
             dur.append(time.time() - t0)
 
-        acc = evaluate(net, test_g, test_features, test_labels, test_mask)
-        print("Epoch {:05d} | Loss {:.4f} | Test Acc {:.4f} | Time(s) {:.4f}".format(
-            epoch, loss.item(), acc, np.mean(dur)))
+        door_acc, non_door_acc = evaluate(net, test_g, test_features, test_labels, test_mask)
+        print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Time(s) {:.4f}".format(
+            epoch, loss.item(), door_acc, non_door_acc, np.mean(dur)))
 
     # Save model when done training
     torch.save(net.state_dict(), CHKPT_PATH)

@@ -116,34 +116,38 @@ class DxfReader:
                 if delta_angle < 0:
                     delta_angle += 360
                 step = start_angle
+                downsample_factor = 10
                 for i in range(int(delta_angle) + 1):
-                    point = [center[0] + (radius * math.cos(math.radians(step))),
-                             center[1] + (radius * math.sin(math.radians(step)))]
-                    if i == 0:
-                        prev_point = point
-                    else:
-                        curr_point = point
-                        line = [prev_point, curr_point]
-                        prev_point = curr_point
-                        line_out.append(line)
-                    step += 1
+                    if i % downsample_factor == 0 or i == 0 or i == int(delta_angle):
+                        point = [center[0] + (radius * math.cos(math.radians(step))),
+                                 center[1] + (radius * math.sin(math.radians(step)))]
+                        if i == 0:
+                            prev_point = point
+                        else:
+                            curr_point = point
+                            line = [prev_point, curr_point]
+                            prev_point = curr_point
+                            line_out.append(line)
+                        step += downsample_factor
         elif e.dxftype() is 'CIRCLE':
             if not self.is_hidden(e):
                 #print('Circle:', e.dxf.linetype)
                 center = list(e.dxf.center.vec2)
                 radius = e.dxf.radius
                 step = 0
+                downsample_factor = 10
                 for i in range(360 + 1):
-                    point = [center[0] + (radius * math.cos(math.radians(step))),
-                             center[1] + (radius * math.sin(math.radians(step)))]
-                    if i == 0:
-                        prev_point = point
-                    else:
-                        curr_point = point
-                        line = [prev_point, curr_point]
-                        prev_point = curr_point
-                        line_out.append(line)
-                    step += 1
+                    if i % downsample_factor == 0 or i == 0 or i == 360:
+                        point = [center[0] + (radius * math.cos(math.radians(step))),
+                                 center[1] + (radius * math.sin(math.radians(step)))]
+                        if i == 0:
+                            prev_point = point
+                        else:
+                            curr_point = point
+                            line = [prev_point, curr_point]
+                            prev_point = curr_point
+                            line_out.append(line)
+                        step += downsample_factor
         elif e.dxftype() is 'POINT':
             if not self.is_hidden(e):
                 # TODO finish and plot
