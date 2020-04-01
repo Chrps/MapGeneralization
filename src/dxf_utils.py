@@ -38,6 +38,7 @@ class DxfReader:
             self.doc = ezdxf.readfile(self.dxf_path)
             self.msp = self.doc.modelspace()
             self.line_data = []
+            self.id_data = []
             self.point_data = []
             self.unrecognized_types = []
             self.arc_data = []
@@ -54,6 +55,7 @@ class DxfReader:
 
     def entity2line(self, e):
         line_out = []
+        id_out = []
         if e.dxftype() is 'LINE':
             point1 = e.dxf.start
             point2 = e.dxf.end
@@ -61,6 +63,7 @@ class DxfReader:
                 # Neglect the z-value as expected to be 0
                 line = [point1[:2], point2[:2]]
                 line_out.append(line)
+                id_out.append(0)
         elif e.dxftype() is 'LWPOLYLINE':
             if not self.is_hidden(e):
                 # TODO: different line types?
@@ -73,6 +76,7 @@ class DxfReader:
                     if e.closed:
                         lwpolyline.append(lwpolyline[0])
                 line_out.append(lwpolyline)
+                id_out.append(1)
         elif e.dxftype() is 'POLYLINE':
             # POLYLINE points are saved as a list of vertices
             if not self.is_hidden(e):
@@ -84,6 +88,7 @@ class DxfReader:
                 if e.is_closed:
                     polyline.append(polyline[0])
                 line_out.append(polyline)
+                id_out.append(2)
         elif e.dxftype() is 'HATCH':
             # TODO extract pattern!
             if not self.is_hidden(e):
@@ -94,6 +99,7 @@ class DxfReader:
                             point = list(vertex[:2])
                             polyline.append(point)
                         line_out.append(polyline)
+                        id_out.append(2)
                     elif path.PATH_TYPE is 'EdgePath':
                         for edge in path.edges:
                             if edge.EDGE_TYPE is 'LineEdge':
@@ -101,6 +107,7 @@ class DxfReader:
                                 point2 = edge.end
                                 line = [point1[:2], point2[:2]]
                                 line_out.append(line)
+                                id_out.append(0)
                             else:
                                 print("unrecognized edge type: " + str(edge.EDGE_TYPE))
                     else:
@@ -128,6 +135,7 @@ class DxfReader:
                             line = [prev_point, curr_point]
                             prev_point = curr_point
                             line_out.append(line)
+                            id_out.append(3)
                         step += downsample_factor
         elif e.dxftype() is 'CIRCLE':
             if not self.is_hidden(e):
@@ -147,6 +155,7 @@ class DxfReader:
                             line = [prev_point, curr_point]
                             prev_point = curr_point
                             line_out.append(line)
+                            id_out.append(4)
                         step += downsample_factor
         elif e.dxftype() is 'POINT':
             if not self.is_hidden(e):
@@ -160,9 +169,11 @@ class DxfReader:
                         layer_name = b_e.dxf.layer
                         layer = self.doc.layers.get(layer_name)
                         #print("Layer", layer.dxf.linetype)
-                        lines = self.entity2line(b_e)
-                        for line in lines:
+                        lines, ids = self.entity2line(b_e)
+                        for idx, line in enumerate(lines):
+                            id = ids[idx]
                             line_out.append(line)
+                            id_out.append(id)
 
         else:
             if not self.unrecognized_types:
@@ -172,18 +183,19 @@ class DxfReader:
                     self.unrecognized_types[list(zip(*self.unrecognized_types))[0].index(e.dxftype())][1] += 1
                 else:
                     self.unrecognized_types.append([e.dxftype(), 1])
-        return line_out
+        return line_out, id_out
 
     def extract_data(self):
         for e in self.msp:
-            lines = self.entity2line(e)
+            lines, ids = self.entity2line(e)
             if lines:
                 if e.dxftype() is 'INSERT':
                     rotation = e.dxf.rotation
                     x_scale = e.dxf.xscale
                     y_scale = e.dxf.yscale
                     position = e.dxf.insert[:2]
-                    for line in lines:
+                    for idx, line in enumerate(lines):
+                        id = ids[idx]
                         t_line = []
                         for point in line:
                             l_point = list(point)
@@ -202,14 +214,18 @@ class DxfReader:
                             l_point[1] += position[1]
                             t_line.append(tuple(l_point))
                         self.line_data.append(t_line)
+                        self.id_data.append(id)
+
                 else:
-                    for line in lines:
+                    for idx, line in enumerate(lines):
+                        id = ids[idx]
                         self.line_data.append(line)
+                        self.id_data.append(id)
                         pass
         for unrecognized_type in self.unrecognized_types:
             print("Type " + str(unrecognized_type[0]) + " not recognized. Nr. of instances: "
                   + str(unrecognized_type[1]))
-        return self.line_data
+        return self.line_data, self.id_data
 
     def plot_data(self):
         w, h = figaspect(5 / 3)
@@ -223,15 +239,18 @@ class DxfReader:
         # Create network graph
         self.G = nx.Graph()
         list_of_nodes = []
+        list_of_ids = []
         current_id = 0
 
-        for entity in self.line_data:
+        for idx, entity in enumerate(self.line_data):
+            entity_id = self.id_data[idx]
             connectivity_list = []
             for point in entity:
                 point = tuple([int(_) for _ in point])
                 # If we are beginning then list is empty (i.e. no nodes yet)
                 if not list_of_nodes:
                     list_of_nodes.append(Node(current_id, point))
+                    list_of_ids.append(entity_id)
                     connectivity_list.append(current_id)
                     current_id += 1
                 else:
@@ -244,6 +263,7 @@ class DxfReader:
                             break
                     if not bFoundSameNode:
                         list_of_nodes.append(Node(current_id, point))
+                        list_of_ids.append(entity_id)
                         connectivity_list.append(current_id)
                         current_id += 1
             for con_idx, connection in enumerate(connectivity_list[:-1]):
@@ -251,8 +271,9 @@ class DxfReader:
                     if node.id == connection:
                         node.connected_to.append(connectivity_list[con_idx + 1])
 
-        for node in list_of_nodes:
-            self.G.add_node(node.id, pos=node.coordinate)
+        for idx, node in enumerate(list_of_nodes):
+            id = list_of_ids[idx]
+            self.G.add_node(node.id, pos=node.coordinate, id=id)
         for node in list_of_nodes:
             if not node.connected_to:
                 pass
@@ -267,9 +288,11 @@ class DxfReader:
                     self.G.add_edge(node.id, node_connection)
         if visualize:
             pos = nx.get_node_attributes(self.G, 'pos')
+            ids = nx.get_node_attributes(self.G, 'id')
             w, h = figaspect(5 / 3)
             fig, ax = plt.subplots(figsize=(w, h))
             nx.draw(self.G, pos, node_size=20, ax=ax)
+            nx.draw_networkx_labels(self.G, pos, ids, ax=ax)
             plt.show()
 
         if save:
@@ -287,9 +310,11 @@ class DxfReader:
         self.G = nx.read_gpickle("data/graphs/" + file_name + ".gpickle")
         if visualize:
             pos = nx.get_node_attributes(self.G, 'pos')
+            ids = nx.get_node_attributes(self.G, 'id')
             w, h = figaspect(5 / 3)
             fig, ax = plt.subplots(figsize=(w, h))
             nx.draw(self.G, pos, node_size=20, ax=ax)
+            nx.draw_networkx_labels(self.G, pos, ids, ax=ax)
             plt.show()
 
 
