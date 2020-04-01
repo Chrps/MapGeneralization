@@ -52,8 +52,8 @@ def generate_graph():
     for edge in edges:
         G.add_edge(edge[0], edge[1])
 
-    #num_diamonds = random.randint(2, 5)
-    num_diamonds = 4
+    num_diamonds = random.randint(1, 6)
+    #num_diamonds = 4
     # Get a random edge
     idxs = random.sample(range(0, (len(edges)-1)), num_diamonds)
 
@@ -106,8 +106,8 @@ def generate_graph():
 
     return G, pos
 def main():
-    NUM_GRAPHS_TRAIN = 5
-    NUM_GRAPHS_TEST = 2
+    NUM_GRAPHS_TRAIN = 500
+    NUM_GRAPHS_TEST = 10
 
     train_file = open('../data/synth_graphs/train_file_list.txt', "w+")
     test_file = open('../data/synth_graphs/test_file_list.txt', "w+")

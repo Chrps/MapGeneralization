@@ -9,6 +9,18 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
+# Imports for DeepWalk
+import os
+import random
+from io import open
+from deepwalk import graph
+from deepwalk import walks as serialized_walks
+from gensim.models import Word2Vec
+from deepwalk.skipgram import Skipgram
+from six.moves import range
+
+
+
 gcn_msg = fn.copy_src(src='h', out='m')
 gcn_reduce = fn.sum(msg='m', out='h')
 
@@ -36,10 +48,10 @@ class GCN(nn.Module):
         return g.ndata.pop('h')
 
 class Net(nn.Module):
-    def __init__(self):
+    def __init__(self, input_size):
         super(Net, self).__init__()
-        self.gcn1 = GCN(4, 16, F.relu)
-        self.gcn2 = GCN(16, 2, None)
+        self.gcn1 = GCN(input_size, 64, F.relu)
+        self.gcn2 = GCN(64, 2, None)
 
     def forward(self, g, features):
         x = self.gcn1(g, features)
@@ -82,8 +94,89 @@ def normalize_positions(positions):
         norm_pos.append(temp_pos)
     return norm_pos
 
+def execute_deepwalk(nxg, file_name):
+    undirected = True  # Treat graph as undirected.
+    number_walks = 5  # Number of random walks to start at each node
+    walk_length = 10  # Length of the random walk started at each node
+    max_memory_data_size = 1000000000  # Size to start dumping walks to disk, instead of keeping them in memory
+    seed = 0  # Seed for random walk generator
+    representation_size = 64  # Number of latent dimensions to learn for each node
+    window_size = 5  # Window size of skipgram model
+    workers = 1  # Number of parallel processes
+    vertex_freq_degree = False  # Use vertex degree to estimate the frequency of nodes in the random walks. This option is faster than calculating the vocabulary
 
-def get_features(graph, positions):
+
+    output = 'data/embeddings/' + file_name
+    if os.path.exists(output):
+        pass
+    else:
+        # Set up adjacency list
+        # G = graph.load_adjacencylist(input, undirected=undirected)
+        G = graph.from_networkx(nxg, undirected=undirected)
+
+        print("Number of nodes: {}".format(len(G.nodes())))
+
+        num_walks = len(G.nodes()) * number_walks
+
+        print("Number of walks: {}".format(num_walks))
+
+        data_size = num_walks * walk_length
+
+        print("Data size (walks*length): {}".format(data_size))
+
+        if data_size < max_memory_data_size:
+            print("Walking...")
+            walks = graph.build_deepwalk_corpus(G, num_paths=number_walks,
+                                                path_length=walk_length, alpha=0, rand=random.Random(seed))
+            print("Training...")
+            model = Word2Vec(walks, size=representation_size, window=window_size, min_count=0, sg=1, hs=1,
+                             workers=workers)
+        else:
+            print("Data size {} is larger than limit (max-memory-data-size: {}).  Dumping walks to disk.".format(data_size,
+                                                                                                                 max_memory_data_size))
+            print("Walking...")
+
+            walks_filebase = output + ".walks"
+            walk_files = serialized_walks.write_walks_to_disk(G, walks_filebase, num_paths=number_walks,
+                                                              path_length=walk_length, alpha=0,
+                                                              rand=random.Random(seed),
+                                                              num_workers=workers)
+
+            print("Counting vertex frequency...")
+            if not vertex_freq_degree:
+                vertex_counts = serialized_walks.count_textfiles(walk_files, workers)
+            else:
+                # use degree distribution for frequency in tree
+                vertex_counts = G.degree(nodes=G.iterkeys())
+
+            print("Training...")
+            walks_corpus = serialized_walks.WalksCorpus(walk_files)
+            model = Skipgram(sentences=walks_corpus, vocabulary_counts=vertex_counts,
+                             size=representation_size,
+                             window=window_size, min_count=0, trim_rule=None, workers=workers)
+
+        model.wv.save_word2vec_format(output)
+    return representation_size
+
+
+def read_embedding(file_name):
+    file = 'data/embeddings/' + file_name
+    with open(file) as f:
+        list_string_feat = f.readlines()
+        list_string_feat.pop(0)  # First line is not used
+        embedding_feat = []
+        for string_node_feat in list_string_feat:
+            node_feat = np.fromstring(string_node_feat, dtype=float, sep=' ')
+            embedding_feat.append(node_feat)
+        embedding_feat = sorted(embedding_feat, key=lambda x: x[0])
+        for idx, row in enumerate(embedding_feat):
+            embedding_feat[idx] = np.delete(row, 0)
+        embedding_feat = torch.FloatTensor(embedding_feat)
+
+    return embedding_feat
+
+
+def get_features(graph, nxg, file_name, positions):
     # % Define some features for the graph
     # Normalized positions
     norm_pos = normalize_positions(positions)
@@ -99,8 +192,11 @@ def get_features(graph, positions):
     norm_pos = torch.FloatTensor(norm_pos)
     norm_identity = torch.FloatTensor(norm_identity)
 
+    number_emb_feat = execute_deepwalk(nxg, file_name)
+    embedding_feat = read_embedding(file_name)
     # Define the features as one large tensor
-    features = torch.cat((norm_deg, norm_pos, norm_identity), 1)
+    features = torch.cat((norm_deg, norm_pos, norm_identity, embedding_feat), 1)
+    #features = embedding_feat
 
     return features
 
@@ -121,7 +217,7 @@ def draw(results, ax, nx_G, positions):
 
 
 def main():
-    TEST_PATH = 'data/graph_annotations/xray_room_w_annotations.gpickle'
+    TEST_PATH = 'data/graph_annotations/hotel_room_Layout_w_annotations.gpickle'
     CHKPT_PATH = 'checkpoint/model_gcn.pth'
     VISUALIZE = True
 
@@ -134,11 +230,12 @@ def main():
     g.from_networkx(nxg)
     g.readonly()
 
+    file_name = os.path.splitext(os.path.basename(TEST_PATH))[0]
     # Get the features
-    features = get_features(g, positions)
+    features = get_features(g, nxg, file_name, positions)
 
     # Load the model
-    net = Net()
+    net = Net(input_size=features.size()[1])
     net.load_state_dict(torch.load(CHKPT_PATH))
     print(net)
 

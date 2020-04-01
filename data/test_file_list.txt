@@ -1,1 +1,1 @@
-xray_room_w_annotations.gpickle
+public_toilet2_w_annotations.gpickle
