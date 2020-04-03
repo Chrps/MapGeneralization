@@ -217,15 +217,32 @@ class DxfReader:
             if not self.is_hidden(e):
                 block = self.doc.blocks[e.dxf.name]
                 if block.is_alive:
+                    list_e_types = []
                     for b_e in block:
+                        list_e_types.extend([b_e.dxftype()])
                         layer_name = b_e.dxf.layer
                         layer = self.doc.layers.get(layer_name)
                         #print("Layer", layer.dxf.linetype)
                         lines, ids = self.entity2line(b_e)
-                        for idx, line in enumerate(lines):
-                            id = ids[idx]
-                            line_out.append(line)
-                            id_out.append(id)
+                        if b_e.dxftype() is 'INSERT':
+                            ins_location = b_e.dxf.insert
+                            ins_lines = []
+                            for idx_l, line in enumerate(lines):
+                                tmp_line = []
+                                for point in line:
+                                    x = float(point[0]) + float(ins_location[0])
+                                    y = float(point[1]) + float(ins_location[1])
+                                    tmp_line.append((x, y))
+                                ins_lines.extend([tmp_line])
+                            for idx, ins_line in enumerate(ins_lines):
+                                id = ids[idx]
+                                line_out.append(ins_line)
+                                id_out.append(id)
+                        else:
+                            for idx, line in enumerate(lines):
+                                id = ids[idx]
+                                line_out.append(line)
+                                id_out.append(id)
 
         else:
             if not self.unrecognized_types:
@@ -341,10 +358,11 @@ class DxfReader:
         if visualize:
             pos = nx.get_node_attributes(self.G, 'pos')
             ids = nx.get_node_attributes(self.G, 'id')
+            myset = set(pos.values())
             w, h = figaspect(5 / 3)
             fig, ax = plt.subplots(figsize=(w, h))
             nx.draw(self.G, pos, node_size=20, ax=ax)
-            nx.draw_networkx_labels(self.G, pos, ids, ax=ax)
+            #nx.draw_networkx_labels(self.G, pos, ids, ax=ax)
             plt.show()
 
         if save:
