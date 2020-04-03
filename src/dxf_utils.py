@@ -218,11 +218,13 @@ class DxfReader:
                 block = self.doc.blocks[e.dxf.name]
                 if block.is_alive:
                     list_e_types = []
+                    b_name = block.name
+                    insert = e.dxf.insert
+                    if b_name == "tagbrønde":
+                        print("here")
                     for b_e in block:
                         list_e_types.extend([b_e.dxftype()])
                         layer_name = b_e.dxf.layer
-                        layer = self.doc.layers.get(layer_name)
-                        #print("Layer", layer.dxf.linetype)
                         lines, ids = self.entity2line(b_e)
                         if b_e.dxftype() is 'INSERT':
                             ins_location = b_e.dxf.insert
@@ -239,9 +241,9 @@ class DxfReader:
                                 line_out.append(ins_line)
                                 id_out.append(id)
                         else:
-                            for idx, line in enumerate(lines):
+                            for idx, ins_line in enumerate(lines):
                                 id = ids[idx]
-                                line_out.append(line)
+                                line_out.append(ins_line)
                                 id_out.append(id)
 
         else:
@@ -259,10 +261,23 @@ class DxfReader:
             lines, ids = self.entity2line(e)
             if lines:
                 if e.dxftype() is 'INSERT':
+                    block = self.doc.blocks[e.dxf.name]
+                    b_name = block.name
+                    if b_name == "tagbrønde":
+                        print("here")
                     rotation = e.dxf.rotation
                     x_scale = e.dxf.xscale
                     y_scale = e.dxf.yscale
-                    position = e.dxf.insert[:2]
+
+                    position_ = e.dxf.insert[:2]
+                    ext_vect = e.dxf.extrusion
+                    if ext_vect[2] == -1:
+                        x = -(position_[0])
+                        y = position_[1]
+                    else:
+                        x = position_[0]
+                        y = position_[1]
+                    position = (x, y)
                     for idx, line in enumerate(lines):
                         id = ids[idx]
                         t_line = []
