@@ -14,7 +14,7 @@ GAT_CONFIG = {
 }
 
 GRAPHSAGE_CONFIG = {
-    'extra_args': [16, 1, F.relu, 0.5, 'gcn'],
+    'extra_args': [64, 3, F.relu, 0.5, 'gcn'],
     'lr': 1e-2,
     'weight_decay': 5e-4,
 }
@@ -26,7 +26,7 @@ APPNP_CONFIG = {
 }
 
 TAGCN_CONFIG = {
-    'extra_args': [16, 1, F.relu, 0.5],
+    'extra_args': [32, 3, F.relu, 0.5],
     'lr': 1e-2,
     'weight_decay': 5e-4,
 }

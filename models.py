@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from dgl.nn.pytorch import GraphConv, GATConv, SAGEConv, GINConv,\
-    APPNPConv, TAGConv, SGConv, AGNNConv, ChebConv
+    APPNPConv, TAGConv, SGConv, AGNNConv, ChebConv, MaxPooling
 
 
 class GCN_MOD(nn.Module):
@@ -24,12 +24,43 @@ class GCN_MOD(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, g, features):
+
         h = features
         for i, layer in enumerate(self.layers):
             if i != 0:
                 h = self.dropout(h)
             h = layer(g, h)
         return h
+
+class GCN_MOD2(nn.Module):
+    def __init__(self,
+                 in_feats,
+                 n_classes,
+                 n_hidden,
+                 n_layers,
+                 activation,
+                 dropout):
+        super(GCN_MOD2, self).__init__()
+        self.layers = nn.ModuleList()
+        # input layer
+        self.layers.append(GraphConv(in_feats, n_hidden, activation=activation))
+        self.layers.append(nn.BatchNorm1d(n_hidden))
+        # hidden layers
+        for i in range(n_layers - 1):
+            self.layers.append(GraphConv(n_hidden, n_hidden, activation=activation))
+        # output layer
+        self.layers.append(GraphConv(n_hidden, n_classes))
+        self.dropout = nn.Dropout(p=dropout)
+
+    def forward(self, g, features):
+
+        h = features
+        for i, layer in enumerate(self.layers):
+            if i != 0:
+                h = self.dropout(h)
+            h = layer(g, h)
+        return h
+
 
 class GCN(nn.Module):
     def __init__(self,
@@ -105,7 +136,6 @@ class GAT(nn.Module):
 
 class GraphSAGE(nn.Module):
     def __init__(self,
-                 g,
                  in_feats,
                  n_classes,
                  n_hidden,
@@ -115,7 +145,6 @@ class GraphSAGE(nn.Module):
                  aggregator_type):
         super(GraphSAGE, self).__init__()
         self.layers = nn.ModuleList()
-        self.g = g
 
         # input layer
         self.layers.append(SAGEConv(in_feats, n_hidden, aggregator_type, feat_drop=dropout, activation=activation))
@@ -125,10 +154,10 @@ class GraphSAGE(nn.Module):
         # output layer
         self.layers.append(SAGEConv(n_hidden, n_classes, aggregator_type, feat_drop=dropout, activation=None)) # activation None
 
-    def forward(self, features):
+    def forward(self, g, features):
         h = features
         for layer in self.layers:
-            h = layer(self.g, h)
+            h = layer(g, h)
         return h
 
 
@@ -181,7 +210,6 @@ class APPNP(nn.Module):
 
 class TAGCN(nn.Module):
     def __init__(self,
-                 g,
                  in_feats,
                  n_classes,
                  n_hidden,
@@ -189,7 +217,6 @@ class TAGCN(nn.Module):
                  activation,
                  dropout):
         super(TAGCN, self).__init__()
-        self.g = g
         self.layers = nn.ModuleList()
         # input layer
         self.layers.append(TAGConv(in_feats, n_hidden, activation=activation))
@@ -200,12 +227,12 @@ class TAGCN(nn.Module):
         self.layers.append(TAGConv(n_hidden, n_classes)) #activation=None
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, features):
+    def forward(self, g, features):
         h = features
         for i, layer in enumerate(self.layers):
             if i != 0:
                 h = self.dropout(h)
-            h = layer(self.g, h)
+            h = layer(g, h)
         return h
 
 

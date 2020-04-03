@@ -115,7 +115,7 @@ def batch_graphs(data_list, folder):
     print(conc_all_norm_deg.size())
     print(all_norm_identity.size())
     # Define the features a one large tensor
-    features = torch.cat((conc_all_norm_deg, all_norm_pos1, all_norm_pos2, all_norm_identity, all_norm_ids), 1)
+    features = torch.cat((conc_all_norm_deg, all_norm_identity, all_norm_ids), 1)
 
     return batched_graph, all_labels, features
 
@@ -151,7 +151,7 @@ def get_features(graph, positions, ids):
     norm_deg = norm_deg.view(norm_deg.size()[0], 1)
 
     # Define the features as one large tensor
-    features = torch.cat((norm_deg, norm_pos1, norm_pos2, norm_identity, norm_ids), 1)
+    features = torch.cat((norm_deg, norm_identity, norm_ids), 1)
 
     return features
 
@@ -162,6 +162,8 @@ def get_model_and_config(name):
         return GCN, GCN_CONFIG
     elif name == 'gcn_mod':
         return GCN_MOD, GCN_CONFIG
+    elif name == 'gcn_mod2':
+        return GCN_MOD2, GCN_CONFIG
     elif name == 'gat':
         return GAT, GAT_CONFIG
     elif name == 'graphsage':
@@ -285,7 +287,7 @@ def train(net, gpu, n_epochs, n_classes, n_features, self_loop):
 
     print(model)
 
-    weights = [0.075, 0.925]
+    weights = [0.05, 0.95]
     weights = torch.FloatTensor(weights)
     loss_fcn = torch.nn.CrossEntropyLoss(weight=weights)
 
@@ -367,17 +369,17 @@ def inference(net, n_classes, n_features, VISUALIZE=True):
     features = get_features(g, positions, ids)
 
     # Get labels
-    label_dict = nx.get_node_attributes(nxg, 'label')
-    labels = list(label_dict.values())
-    labels = torch.LongTensor(labels)
+    #label_dict = nx.get_node_attributes(nxg, 'label')
+    #labels = list(label_dict.values())
+    #labels = torch.LongTensor(labels)
 
     with th.no_grad():
         logits = model(g, features)
         _, predictions = th.max(logits, dim=1)
         predictions = predictions.numpy()
 
-    acc, acc0, acc1 = evaluate(model, g, features, labels, test_mask)
-    print("Test Accuracy: All: {:.4f} | Class 0: {:.4f}| Class 1: {:.4f}".format(acc, acc0, acc1))
+    #acc, acc0, acc1 = evaluate(model, g, features, labels, test_mask)
+    #print("Test Accuracy: All: {:.4f} | Class 0: {:.4f}| Class 1: {:.4f}".format(acc, acc0, acc1))
 
     if VISUALIZE:
         fig = plt.figure(dpi=150)
@@ -389,12 +391,12 @@ def inference(net, n_classes, n_features, VISUALIZE=True):
 
 if __name__ == '__main__':
 
-    net = 'gcn_mod'  # available models are gcn, gat, graphsage, gin, appnp, tagcn, sgc, agnn
+    net = 'tagcn'  # available models are gcn, gat, graphsage, gin, appnp, tagcn, sgc, agnn
     gpu = -1  # gpu device, -1 = no gpu
     n_epochs = 350
     n_classes = 2
-    n_features = 5
+    n_features = 3
     self_loop = False  # Self-loop creates an edge from each node to itself
-    #train(net, gpu, n_epochs, n_classes, n_features, self_loop)
+    train(net, gpu, n_epochs, n_classes, n_features, self_loop)
 
     inference(net, n_classes, n_features)
