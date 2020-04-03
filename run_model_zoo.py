@@ -11,8 +11,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import os
 
-CHKPT_PATH = 'checkpoint/model_gcn_mod.pth'
-TEST_PATH = 'data/graph_annotations/brain_injury_centre_sub_w_annotations.gpickle'
+CHKPT_PATH = 'checkpoint/model_gcn_mod2.pth'
+TEST_PATH = 'data/graphs/MSP1-HoM-MA-XX+5-ET_cloudconvert_sub.gpickle'
 
 
 def normalize_positions(positions):
@@ -49,10 +49,20 @@ def batch_graphs(data_list, folder):
     all_norm_deg = []
     all_norm_identity = []
     list_of_graphs = []
+    all_norm_ids = []
 
     for file in data_files:
         # Read each file as networkx graph and retrieve positions + labels
         nxg = nx.read_gpickle(file)
+
+        ids = nx.get_node_attributes(nxg, 'id')
+        ids = list(ids.values())
+        for idx, id in enumerate(ids):
+            if id == 0:
+                ids[idx] = 0
+            else:
+                ids[idx] = 1. / id
+        all_norm_ids.extend(ids)
 
         positions = nx.get_node_attributes(nxg, 'pos')
         positions = list(positions.values())
@@ -85,21 +95,40 @@ def batch_graphs(data_list, folder):
 
     # Convert everything to tensor to be used by pytorch/DGL
     all_labels = torch.LongTensor(all_labels)
-    all_norm_pos = torch.FloatTensor(all_norm_pos)
+    #all_norm_pos = torch.FloatTensor(all_norm_pos)
+    all_norm_pos1 = torch.FloatTensor(list(zip(*all_norm_pos))[0])
+    all_norm_pos2 = torch.FloatTensor(list(zip(*all_norm_pos))[1])
+    all_norm_pos1 = all_norm_pos1.view(all_norm_pos1.size()[0], 1)
+    all_norm_pos2 = all_norm_pos2.view(all_norm_pos2.size()[0], 1)
     all_norm_identity = torch.FloatTensor(all_norm_identity)
+    all_norm_ids = torch.FloatTensor(all_norm_ids)
+    all_norm_ids = all_norm_ids.view(all_norm_ids.size()[0], 1)
+    all_norm_identity = all_norm_identity.view(all_norm_identity.size()[0],1)
 
     # Normalized node degrees is a list of tensors so concatenate into one tensor
     conc_all_norm_deg = torch.Tensor(batched_graph.number_of_nodes(), 1)
     torch.cat(all_norm_deg, out=conc_all_norm_deg)
-
+    conc_all_norm_deg = conc_all_norm_deg.view(conc_all_norm_deg.size()[0],1)
+    print(all_norm_ids.size())
+    print(all_norm_pos1.size())
+    print(all_norm_pos2.size())
+    print(conc_all_norm_deg.size())
+    print(all_norm_identity.size())
     # Define the features a one large tensor
-    features = torch.cat((conc_all_norm_deg, all_norm_pos, all_norm_identity), 1)
+    features = torch.cat((conc_all_norm_deg, all_norm_pos1, all_norm_pos2, all_norm_identity, all_norm_ids), 1)
 
     return batched_graph, all_labels, features
 
 
-def get_features(graph, positions):
+def get_features(graph, positions, ids):
     # % Define some features for the graph
+
+    for idx, id in enumerate(ids):
+        if id == 0:
+            ids[idx] = 0
+        else:
+            ids[idx] = 1. / id
+
     # Normalized positions
     norm_pos = normalize_positions(positions)
 
@@ -111,11 +140,18 @@ def get_features(graph, positions):
     norm_identity = np.reshape(norm_identity, (graph.number_of_nodes(), 1))
 
     # Convert everything to tensor to be used by pytorch/DGL
-    norm_pos = torch.FloatTensor(norm_pos)
+    norm_pos1 = torch.FloatTensor(list(zip(*norm_pos))[0])
+    norm_pos2 = torch.FloatTensor(list(zip(*norm_pos))[1])
     norm_identity = torch.FloatTensor(norm_identity)
+    norm_ids = torch.FloatTensor(ids)
+    norm_ids = norm_ids.view(norm_ids.size()[0], 1)
+    norm_identity = norm_identity.view(norm_identity.size()[0], 1)
+    norm_pos1 = norm_pos1.view(norm_pos1.size()[0], 1)
+    norm_pos2 = norm_pos2.view(norm_pos2.size()[0], 1)
+    norm_deg = norm_deg.view(norm_deg.size()[0], 1)
 
     # Define the features as one large tensor
-    features = torch.cat((norm_deg, norm_pos, norm_identity), 1)
+    features = torch.cat((norm_deg, norm_pos1, norm_pos2, norm_identity, norm_ids), 1)
 
     return features
 
@@ -156,7 +192,7 @@ def draw(results, ax, nx_G, positions):
     ax.axis('off')
     ax.set_title('Results')
     nx.draw_networkx(nx_G.to_undirected(), positions, node_color=colors,
-            with_labels=False, node_size=25, ax=ax)
+            with_labels=False, node_size=5, ax=ax)
 
 
 def evaluate(model, g, features, labels, mask):
@@ -249,7 +285,7 @@ def train(net, gpu, n_epochs, n_classes, n_features, self_loop):
 
     print(model)
 
-    weights = [0.3, 1.0]
+    weights = [0.075, 0.925]
     weights = torch.FloatTensor(weights)
     loss_fcn = torch.nn.CrossEntropyLoss(weight=weights)
 
@@ -317,6 +353,9 @@ def inference(net, n_classes, n_features, VISUALIZE=True):
     positions = nx.get_node_attributes(nxg, 'pos')
     positions = list(positions.values())
 
+    ids = nx.get_node_attributes(nxg, 'id')
+    ids = list(ids.values())
+
     # Define DGL graph from netx graph
     g = DGLGraph()
     g.from_networkx(nxg)
@@ -325,7 +364,7 @@ def inference(net, n_classes, n_features, VISUALIZE=True):
     test_mask = torch.BoolTensor(np.ones(g.number_of_nodes()))
 
     # Get the features
-    features = get_features(g, positions)
+    features = get_features(g, positions, ids)
 
     # Get labels
     label_dict = nx.get_node_attributes(nxg, 'label')
@@ -352,10 +391,10 @@ if __name__ == '__main__':
 
     net = 'gcn_mod'  # available models are gcn, gat, graphsage, gin, appnp, tagcn, sgc, agnn
     gpu = -1  # gpu device, -1 = no gpu
-    n_epochs = 500
+    n_epochs = 350
     n_classes = 2
-    n_features = 4
+    n_features = 5
     self_loop = False  # Self-loop creates an edge from each node to itself
-    train(net, gpu, n_epochs, n_classes, n_features, self_loop)
+    #train(net, gpu, n_epochs, n_classes, n_features, self_loop)
 
     inference(net, n_classes, n_features)
