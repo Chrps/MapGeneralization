@@ -53,6 +53,27 @@ class DxfReader:
         else:
             return False
 
+    @staticmethod
+    def arc(center, start_angle, end_angle, radius, line_out, id_out):
+        delta_angle = end_angle - start_angle
+        if delta_angle < 0:
+            delta_angle += 360
+        step = start_angle
+        downsample_factor = 10
+        for i in range(int(delta_angle) + 1):
+            if i % downsample_factor == 0 or i == 0 or i == int(delta_angle):
+                point = [center[0] + (radius * math.cos(math.radians(step))),
+                         center[1] + (radius * math.sin(math.radians(step)))]
+                if i == 0:
+                    prev_point = point
+                else:
+                    curr_point = point
+                    line = [prev_point, curr_point]
+                    prev_point = curr_point
+                    line_out.append(line)
+                    id_out.append(3)
+                step += downsample_factor
+
     def entity2line(self, e):
         line_out = []
         id_out = []
@@ -108,35 +129,23 @@ class DxfReader:
                                 line = [point1[:2], point2[:2]]
                                 line_out.append(line)
                                 id_out.append(0)
+                            elif edge.EDGE_TYPE is 'ArcEdge':
+                                center = list(edge.center)
+                                start_angle = edge.start_angle
+                                end_angle = edge.end_angle
+                                radius = edge.radius
+                                self.arc(center, start_angle, end_angle, radius, line_out, id_out)
                             else:
                                 print("unrecognized edge type: " + str(edge.EDGE_TYPE))
                     else:
                         print("unrecognized path type: " + str(path.PATH_TYPE))
         elif e.dxftype() is 'ARC':
             if not self.is_hidden(e):
-                #print('ARC:', e.dxf.linetype)
                 center = list(e.dxf.center.vec2)
                 start_angle = e.dxf.start_angle
                 end_angle = e.dxf.end_angle
                 radius = e.dxf.radius
-                delta_angle = end_angle - start_angle
-                if delta_angle < 0:
-                    delta_angle += 360
-                step = start_angle
-                downsample_factor = 10
-                for i in range(int(delta_angle) + 1):
-                    if i % downsample_factor == 0 or i == 0 or i == int(delta_angle):
-                        point = [center[0] + (radius * math.cos(math.radians(step))),
-                                 center[1] + (radius * math.sin(math.radians(step)))]
-                        if i == 0:
-                            prev_point = point
-                        else:
-                            curr_point = point
-                            line = [prev_point, curr_point]
-                            prev_point = curr_point
-                            line_out.append(line)
-                            id_out.append(3)
-                        step += downsample_factor
+                self.arc(center, start_angle, end_angle, radius, line_out, id_out)
         elif e.dxftype() is 'CIRCLE':
             if not self.is_hidden(e):
                 #print('Circle:', e.dxf.linetype)
@@ -156,6 +165,49 @@ class DxfReader:
                             prev_point = curr_point
                             line_out.append(line)
                             id_out.append(4)
+                        step += downsample_factor
+        elif e.dxftype() is 'ELLIPSE':
+            if not self.is_hidden(e):
+                center = list(e.dxf.center.vec2)
+                major_axis = list(e.dxf.major_axis)
+                ratio = e.dxf.ratio
+                start_param = e.dxf.start_param
+                end_param = e.dxf.end_param
+                start_angle = start_param
+                end_angle = end_param
+                # Calculate major axis angle to x-axis
+                delta_y = major_axis[1]
+                delta_x = major_axis[0]
+                angle2x_axis = np.arctan2(delta_y, delta_x)
+
+                major_radius = np.sqrt(delta_y ** 2 + delta_x ** 2)
+                minor_radius = major_radius*ratio
+
+                delta_angle = np.degrees(end_angle) - np.degrees(start_angle)
+                if delta_angle < 0:
+                    delta_angle += 360
+                step = np.degrees(start_angle)
+                downsample_factor = 10
+                for i in range(int(delta_angle) + 1):
+                    if i % downsample_factor == 0 or i == 0 or i == int(delta_angle):
+                        # Calculate point of ellipse
+                        x = major_radius * np.cos(np.radians(step))
+                        y = minor_radius * np.sin(np.radians(step))
+                        s = np.sin((np.pi)-angle2x_axis)
+                        c = np.cos((np.pi)-angle2x_axis)
+                        x_rot = x * c - y * s
+                        y_rot = x * s + y * c
+                        x = x_rot + center[0]
+                        y = y_rot + center[1]
+                        point = [x, y]
+                        if i == 0:
+                            prev_point = point
+                        else:
+                            curr_point = point
+                            line = [prev_point, curr_point]
+                            prev_point = curr_point
+                            line_out.append(line)
+                            id_out.append(5)
                         step += downsample_factor
         elif e.dxftype() is 'POINT':
             if not self.is_hidden(e):
