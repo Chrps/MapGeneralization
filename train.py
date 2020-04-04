@@ -1,166 +1,145 @@
-import dgl
-import networkx as nx
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import matplotlib.animation as animation
-import matplotlib.pyplot as plt
 import numpy as np
+import torch
+import time
+import src.graph_utils as graph_utils
+import src.models as models
+from src.configs import *
+import matplotlib.pyplot as plt
+import os
+import argparse
 
-INPUT_SIZE = 3273
-NR_EPOCHS = 60
-TRAIN_PATH = 'data/graphs/xray_room.gpickle'
-LABEL_PATH = 'data/graph_annotations/xray_room.npy'
-CHKPT_PATH = 'checkpoint/model.pth'
-VISUALIZE = True
-
-# Define the message and reduce function
-# NOTE: We ignore the GCN's normalization constant c_ij for this tutorial.
-def gcn_message(edges):
-    # The argument is a batch of edges.
-    # This computes a (batch of) message called 'msg' using the source node's feature 'h'.
-    return {'msg' : edges.src['h']}
-
-def gcn_reduce(nodes):
-    # The argument is a batch of nodes.
-    # This computes the new 'h' features by summing received 'msg' in each node's mailbox.
-    return {'h' : torch.sum(nodes.mailbox['msg'], dim=1)}
-
-# Define the GCNLayer module
-class GCNLayer(nn.Module):
-    def __init__(self, in_feats, out_feats):
-        super(GCNLayer, self).__init__()
-        self.linear = nn.Linear(in_feats, out_feats)
-
-    def forward(self, g, inputs):
-        # g is the graph and the inputs is the input node features
-        # first set the node features
-        g.ndata['h'] = inputs
-        # trigger message passing on all edges
-        g.send(g.edges(), gcn_message)
-        # trigger aggregation at all nodes
-        g.recv(g.nodes(), gcn_reduce)
-        # get the result node features
-        h = g.ndata.pop('h')
-        # perform linear transformation
-        return self.linear(h)
-
-# Define a 2-layer GCN models
-class GCN(nn.Module):
-    def __init__(self, in_feats, hidden_size, num_classes):
-        super(GCN, self).__init__()
-        self.gcn1 = GCNLayer(in_feats, hidden_size)
-        self.gcn2 = GCNLayer(hidden_size, num_classes)
-
-    def forward(self, g, inputs):
-        h = self.gcn1(g, inputs)
-        h = torch.relu(h)
-        h = self.gcn2(g, h)
-        return h
-
-def build_karate_club_graph():
-    g = dgl.DGLGraph()
-    # add 34 nodes into the graph; nodes are labeled from 0~33
-    g.add_nodes(34)
-    # all 78 edges as a list of tuples
-    edge_list = [(1, 0), (2, 0), (2, 1), (3, 0), (3, 1), (3, 2),
-        (4, 0), (5, 0), (6, 0), (6, 4), (6, 5), (7, 0), (7, 1),
-        (7, 2), (7, 3), (8, 0), (8, 2), (9, 2), (10, 0), (10, 4),
-        (10, 5), (11, 0), (12, 0), (12, 3), (13, 0), (13, 1), (13, 2),
-        (13, 3), (16, 5), (16, 6), (17, 0), (17, 1), (19, 0), (19, 1),
-        (21, 0), (21, 1), (25, 23), (25, 24), (27, 2), (27, 23),
-        (27, 24), (28, 2), (29, 23), (29, 26), (30, 1), (30, 8),
-        (31, 0), (31, 24), (31, 25), (31, 28), (32, 2), (32, 8),
-        (32, 14), (32, 15), (32, 18), (32, 20), (32, 22), (32, 23),
-        (32, 29), (32, 30), (32, 31), (33, 8), (33, 9), (33, 13),
-        (33, 14), (33, 15), (33, 18), (33, 19), (33, 20), (33, 22),
-        (33, 23), (33, 26), (33, 27), (33, 28), (33, 29), (33, 30),
-        (33, 31), (33, 32)]
-    # add edges two lists of nodes: src and dst
-    src, dst = tuple(zip(*edge_list))
-    g.add_edges(src, dst)
-    # edges are directional in DGL; make them bi-directional
-    g.add_edges(dst, src)
-
-    return g
-
-def draw(i, all_logits, ax, nx_G, positions):
-    cls1color = '#00FFFF'
-    cls2color = '#FF00FF'
-    pos = {}
-    colors = []
-    for v in range(INPUT_SIZE):
-        pos[v] = all_logits[i][v].numpy()
-        cls = pos[v].argmax()
-        colors.append(cls1color if cls else cls2color)
-    ax.cla()
-    ax.axis('off')
-    ax.set_title('Epoch: %d' % i)
-    nx.draw_networkx(nx_G.to_undirected(), positions, node_color=colors,
-            with_labels=False, node_size=25, ax=ax)
+parser = argparse.ArgumentParser()
+parser.add_argument('--desired_net', type=str, default='tagcn') # available models are gcn, gat, graphsage, gin, appnp, tagcn, sgc, agnn
+parser.add_argument('--num-epochs', type=int, default=100)
+parser.add_argument('--train-path', type=str, default='data/train_file_list.txt')
+parser.add_argument('--valid-path', type=str, default='data/valid_file_list.txt')
+parser.add_argument('--num-classes', type=int, default=2)
+parser.add_argument('--model_name', type=str, default='test_model')
+args = parser.parse_args()
 
 
+def evaluate(model, g, features, labels, mask):
+    model.eval()
+    with torch.no_grad():
+        logits = model(g, features)
+        logits = logits[mask]
+        labels = labels[mask]
+        _, indices = torch.max(logits, dim=1)
+        correct = torch.sum(indices == labels)
 
-def main():
-    #G = build_karate_club_graph()
-    nxg = nx.read_gpickle(TRAIN_PATH)
+        labels0_idx = np.where(labels.numpy() == 0)[0]
+        labels1_idx = np.where(labels.numpy() == 1)[0]
+        indices0 = torch.LongTensor(np.take(indices.numpy(), labels0_idx))
+        indices1 = torch.LongTensor(np.take(indices.numpy(), labels1_idx))
+        labels0 = torch.LongTensor(np.take(labels.numpy(), labels0_idx))
+        labels1 = torch.LongTensor(np.take(labels.numpy(), labels1_idx))
+        correct0 = torch.sum(indices0 == labels0)
+        correct1 = torch.sum(indices1 == labels1)
 
-    #label_dict = nx.get_node_attributes(nxg, 'label')
-    #labels = list(label_dict.values())
+        return correct.item() * 1.0 / len(labels), correct0.item() * 1.0 / len(
+            labels0), correct1.item() * 1.0 / len(labels1)
 
-    labels = list(np.load(LABEL_PATH))
-    nodes = list(nxg.nodes)
-    positions = nx.get_node_attributes(nxg, 'pos')
 
-    G = dgl.DGLGraph()
-    G.from_networkx(nxg, node_attrs=['pos'])
-    print('We have %d nodes.' % G.number_of_nodes())
-    print('We have %d edges.' % G.number_of_edges())
+def plot_loss_and_acc(n_epochs, losses, acc_list, acc0_list, acc1_list):
+    plt.axis([0, n_epochs, 0, 1])
+    plt.plot(losses, 'b', label="loss")
+    plt.plot(acc_list, 'r', label="acc all")
+    plt.plot(acc0_list, 'g', label="acc Non-Door")
+    plt.plot(acc1_list, color='orange', label="acc Door")
+    plt.legend()
+    plt.show(block=False)
+    plt.pause(0.0001)
+    plt.clf()
 
-    # Step 2: Assign features to nodes or edges
-    G.ndata['feat'] = torch.eye(INPUT_SIZE)
 
-    # Step 3: Define a Graph Convolutional Network (GCN)
-    # The first layer transforms input features of size of 34 to a hidden size of 5.
-    # The second layer transforms the hidden layer and produces output features of
-    # size 2, corresponding to the two groups of the karate club.
-    net = GCN(INPUT_SIZE, 5, 2)
+def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_name):
+    # Load your training data in the form of a batched graph (essentially a giant graph)
+    train_g, train_labels, train_features = graph_utils.batch_graphs(train_path, 'graph_annotations')
+    train_mask = torch.BoolTensor(np.ones(train_g.number_of_nodes()))  # Mask tells which nodes are used for training (so all)
+    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(valid_path, 'graph_annotations')
+    valid_mask = torch.BoolTensor(np.ones(valid_g.number_of_nodes()))
 
-    # Step 4: Data preparation and initialization
-    inputs = torch.eye(INPUT_SIZE)
-    labeled_nodes = torch.tensor(nodes)  # Get all nodes
-    labels = torch.tensor(labels, dtype=torch.int64)  # and their correspondng labels
+    # Print how many door vs non-door instances there are
+    non_door_instances = 0
+    door_instances = 0
+    for label in train_labels:
+        if label == 0:
+            non_door_instances += 1
+        if label == 1:
+            door_instances += 1
+    print("Non Door Instances: ", non_door_instances)
+    print("Door Instances: ", door_instances)
 
-    # Step 5: Train
-    optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
-    all_logits = []
-    for epoch in range(NR_EPOCHS):
-        logits = net(G, inputs)
-        # we save the logits for visualization later
-        all_logits.append(logits.detach())
-        logp = F.log_softmax(logits, 1)
-        # we only compute loss for labeled nodes
-        loss = F.nll_loss(logp[labeled_nodes], labels)
+    # create user specified model
+    n_features = (train_features.size())[1]
+    net, config = models.get_model_and_config(desired_net)
+    model = net(n_features,
+                num_classes,
+                *config['extra_args'])
+    print(model)
+
+    # Define weights, loss and optimizer
+    weights = [0.05, 0.95]
+    weights = torch.FloatTensor(weights)
+    loss_fcn = torch.nn.CrossEntropyLoss(weight=weights)
+    optimizer = torch.optim.Adam(model.parameters(),
+                                 lr=config['lr'],
+                                 weight_decay=config['weight_decay'])
+
+    # initialize graph
+    dur = []
+    losses = []
+    overall_acc_list = []
+    non_door_acc_list = []
+    door_acc_list = []
+
+    print('\n --- BEGIN TRAINING ---')
+    for epoch in range(num_epochs):
+        model.train()
+        if epoch >= 3:
+            t0 = time.time()
+        # forward
+        logits = model(train_g, train_features)
+        loss = loss_fcn(logits[train_mask], train_labels[train_mask])
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        print('Epoch %d | Loss: %.4f' % (epoch, loss.item()))
-    
-    # Save the model
-    torch.save(net.state_dict(), CHKPT_PATH)
+        if epoch >= 3:
+            dur.append(time.time() - t0)
 
-    if VISUALIZE:
-        fig = plt.figure(dpi=150)
-        fig.clf()
-        ax = fig.subplots()
-        #draw(10, all_logits, ax, nxg, positions)  # draw the prediction of the first epoch
-        #plt.close()
-        #ani = animation.FuncAnimation(fig, draw(all_logits=all_logits, ax=ax, nx_G=nxg, positions=positions), frames=len(all_logits), interval=200)
-        ani = animation.FuncAnimation(fig, draw, fargs=(all_logits, ax, nxg, positions), frames=len(all_logits), interval=200)
-        plt.show()
+        overall_acc, non_door_acc, door_acc = evaluate(model, valid_g, valid_features, valid_labels, valid_mask)
+        print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Total Acc {:.4f} |" 
+              "Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
+
+        # Plot loss and accuracies
+        losses.append(loss.item())
+        overall_acc_list.append(overall_acc)
+        non_door_acc_list.append(non_door_acc)
+        door_acc_list.append(door_acc)
+        plot_loss_and_acc(num_epochs, losses, overall_acc_list, non_door_acc_list, door_acc_list)
+
+    # Saved the model
+    model_dir = 'models/' + model_name
+    if not os.path.exists(model_dir):
+        os.mkdir(model_dir)
+    model_path = model_dir + '/' + model_name + '.pth'
+    torch.save(model.state_dict(), model_path)
+    # Save .txt file with model cfgs to load for predictions
+    with open('models/' + model_name + '/' + model_name + '.txt', "w+") as model_txt:
+        model_txt.write(desired_net + '\n')
+        model_txt.write(str(n_features) + '\n')
+        model_txt.write(str(num_classes))
 
 
-if __name__ == "__main__":
-    main()
+
+if __name__ == '__main__':
+    desired_net = args.desired_net
+    num_epochs = args.num_epochs
+    train_path = args.train_path
+    valid_path = args.valid_path
+    num_classes = args.num_classes
+    model_name = args.model_name
+
+    train(desired_net, num_epochs, train_path, valid_path, num_classes, model_name)
