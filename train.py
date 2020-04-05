@@ -41,12 +41,12 @@ def evaluate(model, g, features, labels):
             labels0), correct1.item() * 1.0 / len(labels1)
 
 
-def plot_loss_and_acc(n_epochs, losses, acc_list, acc0_list, acc1_list):
+def plot_loss_and_acc(n_epochs, epoch_list, losses, acc_list, acc0_list, acc1_list):
     plt.axis([0, n_epochs, 0, 1])
     plt.plot(losses, 'b', label="loss")
-    plt.plot(acc_list, 'r', label="acc all")
-    plt.plot(acc0_list, 'g', label="acc Non-Door")
-    plt.plot(acc1_list, color='orange', label="acc Door")
+    plt.plot(epoch_list, acc_list, 'r', label="acc all")
+    plt.plot(epoch_list, acc0_list, 'g', label="acc Non-Door")
+    plt.plot(epoch_list, acc1_list, color='orange', label="acc Door")
     plt.legend()
     plt.show(block=False)
     plt.pause(0.0001)
@@ -123,6 +123,7 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
     non_door_acc_list = []
     door_acc_list = []
     weights_list = []
+    epoch_list = []
 
     print('\n --- BEGIN TRAINING ---')
 
@@ -147,20 +148,19 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
         if epoch >= 3:
             dur.append(time.time() - t0)
 
-        overall_acc, non_door_acc, door_acc = evaluate(model, valid_g, valid_features, valid_labels)
-        print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Total Acc {:.4f} |" 
-              "Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
-
-        # Plot loss and accuracies
         losses.append(loss.item())
-        overall_acc_list.append(overall_acc)
-        non_door_acc_list.append(non_door_acc)
-        door_acc_list.append(door_acc)
-        plot_loss_and_acc(num_epochs, losses, overall_acc_list, non_door_acc_list, door_acc_list)
 
-        # Save model
-        if epoch % 10 == 0:  # Save every tenth epoch
+        # Save and evaluate model
+        if epoch % 10 == 0:  # Every tenth epoch
             save_model(model, model_name, epoch, desired_net, n_features, num_classes)
+            overall_acc, non_door_acc, door_acc = evaluate(model, valid_g, valid_features, valid_labels)
+            print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Total Acc {:.4f} |"
+                  "Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
+            overall_acc_list.append(overall_acc)
+            non_door_acc_list.append(non_door_acc)
+            door_acc_list.append(door_acc)
+            epoch_list.append(epoch)
+        plot_loss_and_acc(num_epochs, epoch_list, losses, overall_acc_list, non_door_acc_list, door_acc_list)
 
 
 
