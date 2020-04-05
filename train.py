@@ -52,20 +52,19 @@ def plot_loss_and_acc(n_epochs, losses, acc_list, acc0_list, acc1_list):
     plt.pause(0.0001)
     plt.clf()
 
-def update_weights(labels):
-    non_door_instances = 0.0
-    door_instances = 0.0
-    for label in labels:
-        if label == 0.0:
-            non_door_instances += 1.0
-        if label == 1.0:
-            door_instances += 1.0
-    door_weight = 1.0
-    non_door_weight = float("{:.4f}".format(door_instances/non_door_instances))  # specifying to 4 decimal places
 
+def update_weights(labels):
+    labels0_idx = np.where(labels.numpy() == 0)[0]
+    labels1_idx = np.where(labels.numpy() == 1)[0]
+
+    door_instances = float(len(labels1_idx))
+    non_door_instances = float(len(labels0_idx))
+    non_door_weight = float("{:.4f}".format(door_instances / non_door_instances))  # specifying to 4 decimal places
+    door_weight = 1.0
     weights = [non_door_weight, door_weight]
     weights = torch.FloatTensor(weights)
     return weights
+
 
 def save_model(model, model_name, epoch, desired_net, n_features, num_classes):
     # Saved the model
@@ -80,6 +79,7 @@ def save_model(model, model_name, epoch, desired_net, n_features, num_classes):
         model_txt.write(str(n_features) + '\n')
         model_txt.write(str(num_classes))
 
+
 def collate(samples):
     # The input `samples` is a list of pairs
     #  (graph, label).
@@ -92,14 +92,15 @@ def collate(samples):
 
     return batched_graph, batched_labels, batched_features
 
+
 def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_name):
 
-
+    # Retrieve dataset and prepare it for DataLoader
     trainset = graph_utils.group_graphs_labels_features(train_path, 'graph_annotations')
-
-    data_loader = DataLoader(trainset, batch_size=16, shuffle=True,
+    data_loader = DataLoader(trainset, batch_size=1, shuffle=True,
                              collate_fn=collate)
 
+    # Load the validation data
     valid_g, valid_labels, valid_features = graph_utils.batch_graphs(valid_path, 'graph_annotations')
 
     # create user specified model
@@ -110,10 +111,7 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
                 *config['extra_args'])
     print(model)
 
-    # Define weights, loss and optimizer
-    weights = [0.05, 0.95]
-    weights = torch.FloatTensor(weights)
-    loss_fcn = torch.nn.CrossEntropyLoss(weight=weights)
+    # Define optimizer
     optimizer = torch.optim.Adam(model.parameters(),
                                  lr=config['lr'],
                                  weight_decay=config['weight_decay'])
@@ -124,6 +122,7 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
     overall_acc_list = []
     non_door_acc_list = []
     door_acc_list = []
+    weights_list = []
 
     print('\n --- BEGIN TRAINING ---')
 
@@ -133,8 +132,12 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
             t0 = time.time()
         for iter, (bg, labels, features) in enumerate(data_loader):
             # forward
+            if epoch == 0:
+                weights = update_weights(labels)
+                weights_list.append(weights)
             logits = model(bg, features)
             # We need to update weights according to door and non-door instances in current batch
+            loss_fcn = torch.nn.CrossEntropyLoss(weight=weights_list[iter])
             loss = loss_fcn(logits, labels)
 
             optimizer.zero_grad()
