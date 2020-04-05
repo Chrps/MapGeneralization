@@ -1,7 +1,7 @@
 import torch.nn as nn
 from dgl.nn.pytorch import GraphConv, GATConv, SAGEConv, GINConv,\
     APPNPConv, TAGConv, SGConv, AGNNConv, ChebConv
-from configs import GCN_CONFIG, GAT_CONFIG, GRAPHSAGE_CONFIG, \
+from src.configs import GCN_CONFIG, GAT_CONFIG, GRAPHSAGE_CONFIG, \
     APPNP_CONFIG, TAGCN_CONFIG, AGNN_CONFIG, SGC_CONFIG, GIN_CONFIG, CHEBNET_CONFIG
 
 

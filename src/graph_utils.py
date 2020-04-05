@@ -7,6 +7,32 @@ import numpy as np
 from src.deepwalk.deepwalk import DeepWalk
 
 
+def group_graphs_labels_features(data_list, folder):
+    data_path = 'data/'
+    data_files = [os.path.join(data_path, folder, line.rstrip()) for line in open(data_list)]
+
+    # Initialize empty list
+    dataset = []
+
+    for idx, file in enumerate(data_files):
+        graph = []
+        # Convert the gpickle file to a dgl graph for batching
+        dgl_g = convert_gpickle_to_dgl_graph(file)
+        # Get the annotated labels
+        labels = get_labels(file)
+        # Get the feature from the file
+        features = get_features(file)
+
+        graph.append(dgl_g)
+        graph.append(labels)
+        graph.append(features)
+
+        dataset.append(graph)
+
+    return dataset
+
+
+
 def batch_graphs(data_list, folder):
     data_path = 'data/'
     data_files = [os.path.join(data_path, folder, line.rstrip()) for line in open(data_list)]
@@ -21,7 +47,7 @@ def batch_graphs(data_list, folder):
         # Get the annotated labels
         labels = get_labels(file)
         # Get the feature from the file
-        features = chris_get_features(file)
+        features = get_features(file)
 
         # Append the information for batching
         all_graphs.append(dgl_g)

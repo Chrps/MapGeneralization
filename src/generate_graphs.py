@@ -107,7 +107,7 @@ def generate_graph():
     return G, pos
 def main():
     NUM_GRAPHS_TRAIN = 500
-    NUM_GRAPHS_TEST = 10
+    NUM_GRAPHS_TEST = 100
 
     train_file = open('../data/synth_graphs/train_file_list.txt', "w+")
     test_file = open('../data/synth_graphs/test_file_list.txt', "w+")
@@ -121,9 +121,9 @@ def main():
 
     for graph_idx in range(NUM_GRAPHS_TEST):
         G, pos = generate_graph()
-        PATH = '../data/synth_graphs/testing/' + name + str(graph_idx) + '.pickle'
+        PATH = '../data/synth_graphs/testing/test_' + name + str(graph_idx) + '.pickle'
         nx.write_gpickle(G, PATH)
-        test_file.write(name + str(graph_idx) + '.pickle' + "\n")
+        test_file.write('test_' + name + str(graph_idx) + '.pickle' + "\n")
 
     train_file.close()
     test_file.close()
