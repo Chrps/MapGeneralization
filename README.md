@@ -2,7 +2,7 @@
 Make generalized maps from technical drawings 
 
 ## Pipeline
-**DWG(optional) -> DXF:** Can be done using: https://anydwg.com/dwg-dxf/
+**DWG(optional) -> DXF:** Can be done using: https://anydwg.com/dwg-dxf/  
 **DXF -> Line data -> Graph:** Use DxfReader.extract_data() to create line data and DxfReader.convert_data_to_graph() to convert it to a graph  
 **Annotate graphs:** Use annotation_tool.py to annotate the graphs
 **Train Graph node classifiation:** Use train.py to train a model 
