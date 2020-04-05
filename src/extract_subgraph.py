@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import os
 
-GRAPH_PATH = "../data/graphs/MSP1-HoM-MA-XX+5-ET.gpickle"
+GRAPH_PATH = "../data/graphs/MSP1-HoM-MA-XX+5-ET_cloudconvert.gpickle"
 
 
 # TODO: CAN BE MADE MUCH BETTER

@@ -21,7 +21,7 @@ def batch_graphs(data_list, folder):
         # Get the annotated labels
         labels = get_labels(file)
         # Get the feature from the file
-        features = get_features(file)
+        features = chris_get_features(file)
 
         # Append the information for batching
         all_graphs.append(dgl_g)
@@ -109,6 +109,50 @@ def get_features(file):
 
     return features
 
+def chris_get_features(file):
+    # Read file as networkx graph and retrieve positions + labels
+    nxg = nx.read_gpickle(file)
+
+    # % % Define some features for the graph
+    # % Normalized positions
+    positions = nx.get_node_attributes(nxg, 'pos')
+    positions = list(positions.values())
+    norm_positions = normalize_positions(positions)
+    norm_positions = torch.FloatTensor(norm_positions)
+
+    # % Normalized node degree (number of edges connected to node)
+    dgl_g = convert_gpickle_to_dgl_graph(file)
+    norm_degrees = 1. / dgl_g.in_degrees().float().unsqueeze(1)
+
+    # % Normalized unique identity (entity type [ARC/CRCLE/LINE])
+    id_dict = nx.get_node_attributes(nxg, 'id')
+    ids = list(id_dict.values())
+    for idx, id in enumerate(ids):
+        if id == 0:
+            ids[idx] = 0
+        else:
+            ids[idx] = 1. / id
+
+    norm_identity = np.linspace(0, 1, num=nxg.number_of_nodes())
+    norm_identity = np.reshape(norm_identity, (nxg.number_of_nodes(), 1))
+    norm_identity = torch.FloatTensor(norm_identity)
+
+    # norm_ids = [float(i)/float(max(ids)) for i in ids]
+    #norm_ids = [float(i) / 4.0 for i in ids]
+    norm_ids = torch.FloatTensor(np.asarray(ids).reshape(-1, 1))
+
+    # % DeepWalk
+    #dpwlk = DeepWalk(number_walks=4, walk_length=5, representation_size=2)
+    # Create embedding file for given file
+    #dpwlk.create_embeddings(nxg, file)
+    # Read the embedding file for given file
+    #embedding_feat = dpwlk.read_embeddings(file)
+
+    # % Combine all features into one tensor
+    #features = torch.cat((norm_positions, norm_deg, norm_ids, embedding_feat), 1)
+    features = torch.cat((norm_degrees, norm_identity, norm_ids), 1)
+
+    return features
 
 def normalize_positions(positions):
     norm_pos = []

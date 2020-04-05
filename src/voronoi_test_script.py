@@ -11,12 +11,8 @@ from matplotlib.pyplot import cm
 import warnings
 warnings.filterwarnings('ignore')
 from tqdm import tqdm
-from sampler import GraphSampler
-from numba import jit
+from src.sampler import GraphSampler
 import time
-from functools import reduce
-import operator
-import math
 
 
 def generate_graph():
@@ -375,7 +371,6 @@ def merge_associated_edges(vertices_associated_vertices, vertices_associated_edg
 
 
 def main():
-    from scipy.spatial import Delaunay
     #G, pos = generate_graph()
     G = nx.read_gpickle("../data/graphs/public_toilet2.gpickle")
     print(G.number_of_nodes())

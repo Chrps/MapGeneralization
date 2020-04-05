@@ -112,6 +112,8 @@ class DxfReader:
                 id_out.append(2)
         elif e.dxftype() is 'HATCH':
             # TODO extract pattern!
+            # TODO EllipseEdge
+            # TODO SplineEdge
             if not self.is_hidden(e):
                 for path in e.paths:
                     if path.PATH_TYPE is 'PolylinePath':
