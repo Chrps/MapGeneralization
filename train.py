@@ -6,8 +6,6 @@ import src.models as models
 import matplotlib.pyplot as plt
 import os
 import argparse
-from torch.utils.data import DataLoader
-import dgl
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--desired_net', type=str, default='tagcn')  # gcn, tagcn, graphsage, appnp, agnn, gin, chebnet
@@ -19,12 +17,12 @@ parser.add_argument('--model_name', type=str, default='test_model')
 args = parser.parse_args()
 
 
-def evaluate(model, g, features, labels):
+def evaluate(model, g, features, labels, mask):
     model.eval()
     with torch.no_grad():
         logits = model(g, features)
-        logits = logits
-        labels = labels
+        logits = logits[mask]
+        labels = labels[mask]
         _, indices = torch.max(logits, dim=1)
         correct = torch.sum(indices == labels)
 
@@ -52,58 +50,27 @@ def plot_loss_and_acc(n_epochs, losses, acc_list, acc0_list, acc1_list):
     plt.pause(0.0001)
     plt.clf()
 
-def update_weights(labels):
-    non_door_instances = 0.0
-    door_instances = 0.0
-    for label in labels:
-        if label == 0.0:
-            non_door_instances += 1.0
-        if label == 1.0:
-            door_instances += 1.0
-    door_weight = 1.0
-    non_door_weight = float("{:.4f}".format(door_instances/non_door_instances))  # specifying to 4 decimal places
-
-    weights = [non_door_weight, door_weight]
-    weights = torch.FloatTensor(weights)
-    return weights
-
-def save_model(model, model_name, epoch, desired_net, n_features, num_classes):
-    # Saved the model
-    model_dir = 'models/' + model_name
-    if not os.path.exists(model_dir):
-        os.mkdir(model_dir)
-    model_path = model_dir + '/' + model_name + '_epoch_' + str(epoch) + '.pth'
-    torch.save(model.state_dict(), model_path)
-    # Save .txt file with model cfgs to load for predictions
-    with open('models/' + model_name + '/' + model_name + '.txt', "w+") as model_txt:
-        model_txt.write(desired_net + '\n')
-        model_txt.write(str(n_features) + '\n')
-        model_txt.write(str(num_classes))
-
-def collate(samples):
-    # The input `samples` is a list of pairs
-    #  (graph, label).
-    graphs, labels, features = map(list, zip(*samples))
-    batched_graph = dgl.batch(graphs)
-    batched_labels = torch.LongTensor(batched_graph.number_of_nodes(), 1)
-    batched_labels = torch.cat(labels, out=batched_labels)
-    batched_features = torch.Tensor(batched_graph.number_of_nodes(), 1)
-    batched_features = torch.cat(features, out=batched_features)
-
-    return batched_graph, batched_labels, batched_features
 
 def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_name):
-
-
-    trainset = graph_utils.group_graphs_labels_features(train_path, 'graph_annotations')
-
-    data_loader = DataLoader(trainset, batch_size=16, shuffle=True,
-                             collate_fn=collate)
-
+    # Load your training data in the form of a batched graph (essentially a giant graph)
+    train_g, train_labels, train_features = graph_utils.batch_graphs(train_path, 'graph_annotations')
+    train_mask = torch.BoolTensor(np.ones(train_g.number_of_nodes()))  # Mask tells which nodes are used for training (so all)
     valid_g, valid_labels, valid_features = graph_utils.batch_graphs(valid_path, 'graph_annotations')
+    valid_mask = torch.BoolTensor(np.ones(valid_g.number_of_nodes()))
+
+    # Print how many door vs non-door instances there are
+    non_door_instances = 0
+    door_instances = 0
+    for label in train_labels:
+        if label == 0:
+            non_door_instances += 1
+        if label == 1:
+            door_instances += 1
+    print("Non Door Instances: ", non_door_instances)
+    print("Door Instances: ", door_instances)
 
     # create user specified model
-    n_features = trainset[0][2].shape[1]  # number of features is same throughout, so just get shape of first graph
+    n_features = (train_features.size())[1]
     net, config = models.get_model_and_config(desired_net)
     model = net(n_features,
                 num_classes,
@@ -124,41 +91,49 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
     overall_acc_list = []
     non_door_acc_list = []
     door_acc_list = []
+    epoch_list = []
 
     print('\n --- BEGIN TRAINING ---')
-
     for epoch in range(num_epochs):
         model.train()
         if epoch >= 3:
             t0 = time.time()
-        for iter, (bg, labels, features) in enumerate(data_loader):
-            # forward
-            logits = model(bg, features)
-            # We need to update weights according to door and non-door instances in current batch
-            loss = loss_fcn(logits, labels)
+        # forward
+        logits = model(train_g, train_features)
+        loss = loss_fcn(logits[train_mask], train_labels[train_mask])
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
         if epoch >= 3:
             dur.append(time.time() - t0)
 
-        overall_acc, non_door_acc, door_acc = evaluate(model, valid_g, valid_features, valid_labels)
-        print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Total Acc {:.4f} |" 
-              "Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
-
-        # Plot loss and accuracies
         losses.append(loss.item())
-        overall_acc_list.append(overall_acc)
-        non_door_acc_list.append(non_door_acc)
-        door_acc_list.append(door_acc)
-        plot_loss_and_acc(num_epochs, losses, overall_acc_list, non_door_acc_list, door_acc_list)
 
-        # Save model
-        if epoch % 10 == 0:  # Save every tenth epoch
-            save_model(model, model_name, epoch, desired_net, n_features, num_classes)
+        if epoch % 10 == 0:
+            overall_acc, non_door_acc, door_acc = evaluate(model, valid_g, valid_features, valid_labels)
+            print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Total Acc {:.4f} |" 
+                  "Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
 
+            # Plot loss and accuracies
+            epoch_list.append(epoch)
+            overall_acc_list.append(overall_acc)
+            non_door_acc_list.append(non_door_acc)
+            door_acc_list.append(door_acc)
+        plot_loss_and_acc(num_epochs, epoch_list, losses, overall_acc_list, non_door_acc_list, door_acc_list)
+
+    # Saved the model
+    model_dir = 'models/' + model_name
+    if not os.path.exists(model_dir):
+        os.mkdir(model_dir)
+    model_path = model_dir + '/' + model_name + '.pth'
+    torch.save(model.state_dict(), model_path)
+    # Save .txt file with model cfgs to load for predictions
+    with open('models/' + model_name + '/' + model_name + '.txt', "w+") as model_txt:
+        model_txt.write(desired_net + '\n')
+        model_txt.write(str(n_features) + '\n')
+        model_txt.write(str(num_classes))
 
 
 if __name__ == '__main__':
