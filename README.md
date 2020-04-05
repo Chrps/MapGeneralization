@@ -2,11 +2,11 @@
 Make generalized maps from technical drawings 
 
 ## Pipeline
-**DWG(optional) -> DXF:** Can be done online at https://anyconv.com/dwg-to-dxf-converter/  
+**DWG(optional) -> DXF:** Can be done using: https://anydwg.com/dwg-dxf/
 **DXF -> Line data -> Graph:** Use DxfReader.extract_data() to create line data and DxfReader.convert_data_to_graph() to convert it to a graph  
-**Train Graph node classifiation:** Use train.py for sliding window <br/> Use train_gcn.py for batched graphs of different sizes + DeepWalk embedding  
-**Test graph node classifiation:** Use test.py for sliding window <br/>
-Use testgcn.py for batched graphs of different sizes + DeepWalk embedding
+**Annotate graphs:** Use annotation_tool.py to annotate the graphs
+**Train Graph node classifiation:** Use train.py to train a model 
+**Test Graph node classifiation:** Use predict.py to perform inference
 
 ### Notes about graphs
 We've added some example floorplans that we found online for training/testing. In order to train with the graphs you must
