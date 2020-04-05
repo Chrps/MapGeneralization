@@ -1,4 +1,3 @@
-import torch as th
 import torch.nn.functional as F
 
 GCN_CONFIG = {
@@ -14,13 +13,13 @@ GAT_CONFIG = {
 }
 
 GRAPHSAGE_CONFIG = {
-    'extra_args': [64, 3, F.relu, 0.5, 'gcn'],
+    'extra_args': [32, 3, F.relu, 0.5, 'tagcn'],
     'lr': 1e-2,
     'weight_decay': 5e-4,
 }
 
 APPNP_CONFIG = {
-    'extra_args': [64, 1, F.relu, 0.5, 0.5, 0.1, 10],
+    'extra_args': [32, 3, F.relu, 0.5, 0.5, 0.1, 10],
     'lr': 1e-2,
     'weight_decay': 5e-4,
 }
@@ -44,13 +43,13 @@ SGC_CONFIG = {
 }
 
 GIN_CONFIG = {
-    'extra_args': [16, 1, 0, True],
+    'extra_args': [32, 3, 0, True],
     'lr': 1e-2,
     'weight_decay': 5e-6,
 }
 
 CHEBNET_CONFIG = {
-    'extra_args': [32, 1, 2, True],
+    'extra_args': [32, 3, 2, True],
     'lr': 1e-2,
     'weight_decay': 5e-4,
 }

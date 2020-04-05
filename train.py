@@ -3,16 +3,15 @@ import torch
 import time
 import src.graph_utils as graph_utils
 import src.models as models
-from src.configs import *
 import matplotlib.pyplot as plt
 import os
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--desired_net', type=str, default='tagcn') # available models are gcn, gat, graphsage, gin, appnp, tagcn, sgc, agnn
-parser.add_argument('--num-epochs', type=int, default=100)
+parser.add_argument('--desired_net', type=str, default='tagcn')  # gcn, tagcn, graphsage, appnp, agnn, gin, chebnet
+parser.add_argument('--num-epochs', type=int, default=300)
 parser.add_argument('--train-path', type=str, default='data/train_file_list.txt')
-parser.add_argument('--valid-path', type=str, default='data/valid_file_list.txt')
+parser.add_argument('--valid-path', type=str, default='data/train_file_list.txt')
 parser.add_argument('--num-classes', type=int, default=2)
 parser.add_argument('--model_name', type=str, default='test_model')
 args = parser.parse_args()
@@ -131,7 +130,6 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
         model_txt.write(desired_net + '\n')
         model_txt.write(str(n_features) + '\n')
         model_txt.write(str(num_classes))
-
 
 
 if __name__ == '__main__':

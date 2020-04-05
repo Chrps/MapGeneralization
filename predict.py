@@ -59,13 +59,13 @@ def predict(predict_path, model_name):
 
     # Get the list of files for prediction
     data_path = 'data/'
-    folder = 'graph_annotations'
+    folder = 'graphs'
     pred_files = [os.path.join(data_path, folder, line.rstrip()) for line in open(predict_path)]
     for file in pred_files:
         # Convert the gpickle file to a dgl graph
         dgl_g = graph_utils.convert_gpickle_to_dgl_graph(file)
         # Get the features from the given graph
-        features = graph_utils.get_features(file)
+        features = graph_utils.chris_get_features(file)
 
         model.eval()
         with torch.no_grad():
