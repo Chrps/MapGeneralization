@@ -71,13 +71,18 @@ def save_model(model, model_name, epoch, desired_net, n_features, num_classes):
     model_dir = 'models/' + model_name
     if not os.path.exists(model_dir):
         os.mkdir(model_dir)
-    model_path = model_dir + '/' + model_name + '_epoch_' + str(epoch) + '.pth'
+    model_path = model_dir + '/' + model_name + '.pth'
     torch.save(model.state_dict(), model_path)
     # Save .txt file with model cfgs to load for predictions
     with open('models/' + model_name + '/' + model_name + '.txt', "w+") as model_txt:
         model_txt.write(desired_net + '\n')
         model_txt.write(str(n_features) + '\n')
         model_txt.write(str(num_classes))
+    with open('models/' + model_name + '/configs.txt', "w+") as model_txt:
+        model_txt.write('model type: ' + desired_net + '\n')
+        model_txt.write('Number of Features: ' + str(n_features) + '\n')
+        model_txt.write('Number of Classes: ' + str(num_classes) + '\n')
+        model_txt.write('Saved at Epoch: ' + str(epoch) + '\n')
 
 
 def collate(samples):
@@ -124,6 +129,7 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
     door_acc_list = []
     weights_list = []
     epoch_list = []
+    best_val_acc = 0.0
 
     print('\n --- BEGIN TRAINING ---')
 
@@ -151,15 +157,17 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
         losses.append(loss.item())
 
         # Save and evaluate model
-        if epoch % 10 == 0:  # Every tenth epoch
+        overall_val_acc, non_door_acc, door_acc = evaluate(model, valid_g, valid_features, valid_labels)
+
+        if epoch > 30 and best_val_acc < overall_val_acc:
+            best_val_acc = overall_val_acc
             save_model(model, model_name, epoch, desired_net, n_features, num_classes)
-            overall_acc, non_door_acc, door_acc = evaluate(model, valid_g, valid_features, valid_labels)
-            print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Total Acc {:.4f} |"
-                  "Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
-            overall_acc_list.append(overall_acc)
-            non_door_acc_list.append(non_door_acc)
-            door_acc_list.append(door_acc)
-            epoch_list.append(epoch)
+        print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Total Acc {:.4f} |"
+              "Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_val_acc, np.mean(dur)))
+        overall_acc_list.append(overall_val_acc)
+        non_door_acc_list.append(non_door_acc)
+        door_acc_list.append(door_acc)
+        epoch_list.append(epoch)
         plot_loss_and_acc(num_epochs, epoch_list, losses, overall_acc_list, non_door_acc_list, door_acc_list)
 
 
