@@ -1,0 +1,6 @@
+2020-04-06 11:36:32.277044
+Total Training Time (d:h:m:s):  0:0:0:41
+Model Type: tagcn
+Number of Features: 4
+Number of Classes: 2
+Saved at Epoch: 90

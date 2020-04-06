@@ -8,12 +8,14 @@ import os
 import argparse
 from torch.utils.data import DataLoader
 import dgl
+import datetime
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--desired_net', type=str, default='tagcn')  # gcn, tagcn, graphsage, appnp, agnn, gin, chebnet
 parser.add_argument('--num-epochs', type=int, default=300)
 parser.add_argument('--train-path', type=str, default='data/train_file_list.txt')
-parser.add_argument('--valid-path', type=str, default='data/train_file_list.txt')
+parser.add_argument('--valid-path', type=str, default='data/valid_file_list.txt')
 parser.add_argument('--num-classes', type=int, default=2)
 parser.add_argument('--model_name', type=str, default='test_model')
 args = parser.parse_args()
@@ -66,20 +68,33 @@ def update_weights(labels):
     return weights
 
 
-def save_model(model, model_name, epoch, desired_net, n_features, num_classes):
+def save_model(model, model_name, epoch, desired_net, n_features, num_classes, start_time):
     # Saved the model
     model_dir = 'models/' + model_name
     if not os.path.exists(model_dir):
         os.mkdir(model_dir)
     model_path = model_dir + '/' + model_name + '.pth'
     torch.save(model.state_dict(), model_path)
+    # %% Log Total Time
+    end_time = time.time()
+    total_time = end_time - start_time
+    total_time = float(total_time)
+    day = total_time // (24 * 3600)
+    total_time = total_time % (24 * 3600)
+    hour = total_time // 3600
+    total_time %= 3600
+    minutes = total_time // 60
+    total_time %= 60
+    seconds = total_time
     # Save .txt file with model cfgs to load for predictions
     with open('models/' + model_name + '/' + model_name + '.txt', "w+") as model_txt:
         model_txt.write(desired_net + '\n')
         model_txt.write(str(n_features) + '\n')
         model_txt.write(str(num_classes))
-    with open('models/' + model_name + '/configs.txt', "w+") as model_txt:
-        model_txt.write('model type: ' + desired_net + '\n')
+    with open('models/' + model_name + '/meta.txt', "w+") as model_txt:
+        model_txt.write(str(datetime.datetime.now()) + '\n')
+        model_txt.write('Total Training Time (d:h:m:s):  %d:%d:%d:%d' % (day, hour, minutes, seconds) + '\n')
+        model_txt.write('Model Type: ' + desired_net + '\n')
         model_txt.write('Number of Features: ' + str(n_features) + '\n')
         model_txt.write('Number of Classes: ' + str(num_classes) + '\n')
         model_txt.write('Saved at Epoch: ' + str(epoch) + '\n')
@@ -132,6 +147,7 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
     best_val_acc = 0.0
 
     print('\n --- BEGIN TRAINING ---')
+    start_time = time.time()
 
     for epoch in range(num_epochs):
         model.train()
@@ -161,7 +177,7 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
 
         if epoch > 30 and best_val_acc < overall_val_acc:
             best_val_acc = overall_val_acc
-            save_model(model, model_name, epoch, desired_net, n_features, num_classes)
+            save_model(model, model_name, epoch, desired_net, n_features, num_classes, start_time)
         print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Total Acc {:.4f} |"
               "Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_val_acc, np.mean(dur)))
         overall_acc_list.append(overall_val_acc)

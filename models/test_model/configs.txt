@@ -1,4 +1,0 @@
-model type: tagcn
-Number of Features: 4
-Number of Classes: 2
-Saved at Epoch: 85

@@ -28,7 +28,7 @@ class DeepWalk:
 
         # Where and what the embedding file will be saved
         file_name = os.path.splitext(os.path.basename(file_path))[0]
-        output = 'data/embeddings/' + file_name
+        output = 'data/embeddings/' + file_name + '_nw_' + str(self.number_walks) + '_wl_' + str(self.walk_length) + '_rs_' + str(self.representation_size)
 
         # If the embedding file already exists, retrieve it
         if os.path.exists(output):
@@ -83,7 +83,7 @@ class DeepWalk:
 
     def read_embeddings(self, file_path):
         file_name = os.path.splitext(os.path.basename(file_path))[0]
-        file = 'data/embeddings/' + file_name
+        file = 'data/embeddings/' + file_name + '_nw_' + str(self.number_walks) + '_wl_' + str(self.walk_length) + '_rs_' + str(self.representation_size)
         with open(file) as f:
             list_string_feat = f.readlines()
             list_string_feat.pop(0)  # First line is not used
