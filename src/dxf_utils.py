@@ -265,8 +265,6 @@ class DxfReader:
                 if e.dxftype() is 'INSERT':
                     block = self.doc.blocks[e.dxf.name]
                     b_name = block.name
-                    if b_name == "tagbrønde":
-                        print("here")
                     rotation = e.dxf.rotation
                     x_scale = e.dxf.xscale
                     y_scale = e.dxf.yscale
@@ -321,7 +319,7 @@ class DxfReader:
         ax.autoscale()
         plt.show()
 
-    def convert_data_to_graph(self, visualize=True, save=True):
+    def convert_data_to_graph(self, out_folder, visualize=True, save=True):
         # Create network graph
         self.G = nx.Graph()
         list_of_nodes = []
@@ -385,7 +383,7 @@ class DxfReader:
         if save:
             file_name = os.path.basename(self.dxf_file_path)
             file_name = os.path.splitext(file_name)[0]
-            nx.write_gpickle(self.G, "data/graphs/" + file_name + ".gpickle")
+            nx.write_gpickle(self.G, out_folder + "\\" + file_name + ".gpickle")
             #nx.write_gexf(self.G, "data/graphs/test_graph.gexf")
             #nx.read_gexf("data/graphds/test_graph.gexf")
 
