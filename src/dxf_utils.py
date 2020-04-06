@@ -15,6 +15,8 @@ import networkx as nx
 import open3d as o3d
 import numpy as np
 import os
+import math
+from math import isclose
 
 class Node:
     '''Class for keeping track of nodes in network'''
@@ -74,6 +76,38 @@ class DxfReader:
                     id_out.append(3)
                 step += downsample_factor
 
+    @staticmethod
+    def arc_for_polylines(center, start_angle, end_angle, radius, start_point):
+        delta_angle = end_angle - start_angle
+        if delta_angle < 0:
+            delta_angle += 360
+        step = start_angle
+        downsample_factor = 10
+
+        all_points = []
+
+        for i in range(int(delta_angle) + 1):
+            if i % downsample_factor == 0 or i == 0 or i == int(delta_angle):
+                point = [center[0] + (radius * math.cos(math.radians(step))),
+                         center[1] + (radius * math.sin(math.radians(step)))]
+
+                all_points.append(tuple(point))
+
+                step += downsample_factor
+        x1 = all_points[0][0]
+        x2 = start_point[0]
+        y1 = all_points[0][1]
+        y2 = start_point[1]
+        n = 6
+
+        x_same = isclose(x1, x2, abs_tol=10**-n)
+        y_same = isclose(y1, y2, abs_tol=10 ** -n)
+
+        if x_same and y_same:
+            return all_points
+        else:
+            return all_points[::-1]
+
     def entity2line(self, e):
         line_out = []
         id_out = []
@@ -88,12 +122,31 @@ class DxfReader:
         elif e.dxftype() is 'LWPOLYLINE':
             if not self.is_hidden(e):
                 # TODO: different line types?
+                if e.dxf.handle == '20D':
+                    print("here")
                 lwpolyline = []
+                bPrevBulge = False
                 with e.points() as points:
                     # points is a list of points with the format = (x, y, [start_width, [end_width, [bulge]]])
-                    for point in points:
-                        # I only want the x,y coordinates
-                        lwpolyline.append(point[:2])
+                    for idx, point in enumerate(points):
+                        if point[4] != 0.0:  # i.e. we have a bulge value
+                            try:
+                                arc_params = ezdxf.math.bulge_to_arc(start_point=point, end_point=points[idx+1], bulge=point[4])
+                            except IndexError:
+                                if e.closed:
+                                    arc_params = ezdxf.math.bulge_to_arc(start_point=point, end_point=points[0], bulge=point[4])
+                                #else:  # If not closed but has a bulge then neglect
+                                    #lwpolyline.append(point[:2])
+                            center = arc_params[0]
+                            start_angle = math.degrees(arc_params[1])
+                            end_angle = math.degrees(arc_params[2])
+                            radius = arc_params[3]
+                            arc_lines = self.arc_for_polylines(center, start_angle, end_angle, radius, point[:2])
+                            for arc_point in arc_lines:
+                                lwpolyline.append(arc_point)
+                        else:
+                            # I only want the x,y coordinates
+                            lwpolyline.append(point[:2])
                     if e.closed:
                         lwpolyline.append(lwpolyline[0])
                 line_out.append(lwpolyline)
@@ -222,7 +275,7 @@ class DxfReader:
                     list_e_types = []
                     b_name = block.name
                     insert = e.dxf.insert
-                    if b_name == "tagbrønde":
+                    if b_name == "D97V":
                         print("here")
                     for b_e in block:
                         list_e_types.extend([b_e.dxftype()])
