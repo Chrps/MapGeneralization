@@ -57,41 +57,31 @@ class DxfReader:
 
     @staticmethod
     def arc(center, start_angle, end_angle, radius, line_out, id_out):
-        delta_angle = 180 - abs(abs(start_angle - end_angle) - 180)
-        if delta_angle < 0:
-            delta_angle += 360
-        step = start_angle
-        downsample_factor = 10
-        for i in range(int(round(delta_angle)) + 1):
-            if i % downsample_factor == 0 or i == 0 or i == int(delta_angle):
-                point = [center[0] + (radius * math.cos(math.radians(step))),
-                         center[1] + (radius * math.sin(math.radians(step)))]
-                if i == 0:
-                    prev_point = point
-                else:
-                    curr_point = point
-                    line = [prev_point, curr_point]
-                    prev_point = curr_point
-                    line_out.append(line)
-                    id_out.append(3)
-                step += downsample_factor
+        delta_angle = 180.0 - abs(abs(start_angle - end_angle) - 180.0)
+
+        end_angle = start_angle + delta_angle
+
+        downsample_factor = delta_angle / 10.0
+
+        np_angles = np.linspace(start_angle, end_angle, num=round(downsample_factor))
+
+        for i, angle in enumerate(np_angles):
+            point = [center[0] + (radius * math.cos(math.radians(angle))),
+                     center[1] + (radius * math.sin(math.radians(angle)))]
+            if i == 0:
+                prev_point = point
+            else:
+                curr_point = point
+                line = [prev_point, curr_point]
+                prev_point = curr_point
+                line_out.append(line)
+                id_out.append(3)
 
     @staticmethod
     def arc_for_polylines(center, start_angle, end_angle, radius, start_point):
-        delta_angle = end_angle - start_angle
-        angle_n = 2
+        delta_angle = 180 - abs(abs(start_angle - end_angle) - 180)
 
-        if delta_angle < 0.0:
-            delta_angle += 360.0
-
-        if start_angle < 0.0:
-            start_angle += 360.0
-            if isclose(end_angle, 0.0, abs_tol=10**-angle_n):
-                end_angle += 360.0
-        if end_angle < 0.0:
-            end_angle += 360.0
-            if isclose(start_angle, 0.0, abs_tol=10**-angle_n):
-                start_angle += 360.0
+        end_angle = start_angle + delta_angle
 
         downsample_factor = delta_angle / 10.0
 
@@ -109,7 +99,7 @@ class DxfReader:
         x2 = start_point[0]
         y1 = all_points[0][1]
         y2 = start_point[1]
-        n = 6
+        n = 5
 
         x_same = isclose(x1, x2, abs_tol=10**-n)
         y_same = isclose(y1, y2, abs_tol=10 ** -n)
@@ -118,6 +108,7 @@ class DxfReader:
             return all_points
         else:
             return all_points[::-1]
+
 
     def entity2line(self, e):
         line_out = []
@@ -136,7 +127,6 @@ class DxfReader:
                 if e.dxf.handle == '1e5':
                     print("here")
                 lwpolyline = []
-                bPrevBulge = False
                 with e.points() as points:
                     # points is a list of points with the format = (x, y, [start_width, [end_width, [bulge]]])
                     for idx, point in enumerate(points):
@@ -146,15 +136,12 @@ class DxfReader:
                             except IndexError:
                                 if e.closed:
                                     arc_params = ezdxf.math.bulge_to_arc(start_point=point, end_point=points[0], bulge=point[4])
-                                #else:  # If not closed but has a bulge then neglect
-                                    #lwpolyline.append(point[:2])
                             center = arc_params[0]
-
                             start_angle = math.degrees(arc_params[1])
                             end_angle = math.degrees(arc_params[2])
                             radius = arc_params[3]
-                            arc_lines = self.arc_for_polylines(center, start_angle, end_angle, radius, point[:2])
-                            for arc_point in arc_lines:
+                            arc_points = self.arc_for_polylines(center, start_angle, end_angle, radius, point[:2])
+                            for arc_point in arc_points:
                                 lwpolyline.append(arc_point)
                         else:
                             lwpolyline.append(point[:2])
@@ -167,9 +154,27 @@ class DxfReader:
             if not self.is_hidden(e):
                 polyline = []
                 vertices = e.vertices
-                for vertex in vertices:
-                    point = vertex.dxf.location[:2]
-                    polyline.append(point)
+                for idx, vertex in enumerate(vertices):
+                    bulge = vertex.dxf.bulge
+                    if bulge != 0:
+                        try:
+                            arc_params = ezdxf.math.bulge_to_arc(start_point=vertex.dxf.location[:2], end_point=vertices[idx + 1].dxf.location[:2],
+                                                                 bulge=bulge)
+                        except IndexError:
+                            if e.is_closed:
+                                arc_params = ezdxf.math.bulge_to_arc(start_point=vertex.dxf.location[:2],
+                                                                     end_point=vertices[0].dxf.location[:2],
+                                                                     bulge=bulge)
+                        center = arc_params[0]
+                        start_angle = math.degrees(arc_params[1])
+                        end_angle = math.degrees(arc_params[2])
+                        radius = arc_params[3]
+                        arc_points = self.arc_for_polylines(center, start_angle, end_angle, radius, vertex.dxf.location[:2])
+                        for arc_point in arc_points:
+                            polyline.append(arc_point)
+                    else:
+                        point = vertex.dxf.location[:2]
+                        polyline.append(point)
                 if e.is_closed:
                     polyline.append(polyline[0])
                 line_out.append(polyline)
@@ -286,7 +291,7 @@ class DxfReader:
                     list_e_types = []
                     b_name = block.name
                     insert = e.dxf.insert
-                    if b_name == "D121V":
+                    if b_name == "VRATA_91_NA_20":
                         print("here")
                     for b_e in block:
                         list_e_types.extend([b_e.dxftype()])
