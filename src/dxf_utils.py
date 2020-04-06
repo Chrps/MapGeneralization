@@ -57,12 +57,12 @@ class DxfReader:
 
     @staticmethod
     def arc(center, start_angle, end_angle, radius, line_out, id_out):
-        delta_angle = end_angle - start_angle
+        delta_angle = 180 - abs(abs(start_angle - end_angle) - 180)
         if delta_angle < 0:
             delta_angle += 360
         step = start_angle
         downsample_factor = 10
-        for i in range(int(delta_angle) + 1):
+        for i in range(int(round(delta_angle)) + 1):
             if i % downsample_factor == 0 or i == 0 or i == int(delta_angle):
                 point = [center[0] + (radius * math.cos(math.radians(step))),
                          center[1] + (radius * math.sin(math.radians(step)))]
@@ -79,21 +79,32 @@ class DxfReader:
     @staticmethod
     def arc_for_polylines(center, start_angle, end_angle, radius, start_point):
         delta_angle = end_angle - start_angle
-        if delta_angle < 0:
-            delta_angle += 360
-        step = start_angle
-        downsample_factor = 10
+        angle_n = 2
+
+        if delta_angle < 0.0:
+            delta_angle += 360.0
+
+        if start_angle < 0.0:
+            start_angle += 360.0
+            if isclose(end_angle, 0.0, abs_tol=10**-angle_n):
+                end_angle += 360.0
+        if end_angle < 0.0:
+            end_angle += 360.0
+            if isclose(start_angle, 0.0, abs_tol=10**-angle_n):
+                start_angle += 360.0
+
+        downsample_factor = delta_angle / 10.0
+
+        np_angles = np.linspace(start_angle, end_angle, num=round(downsample_factor))
 
         all_points = []
 
-        for i in range(int(delta_angle) + 1):
-            if i % downsample_factor == 0 or i == 0 or i == int(delta_angle):
-                point = [center[0] + (radius * math.cos(math.radians(step))),
-                         center[1] + (radius * math.sin(math.radians(step)))]
+        for angle in np_angles:
+            point = [center[0] + (radius * math.cos(math.radians(angle))),
+                     center[1] + (radius * math.sin(math.radians(angle)))]
 
-                all_points.append(tuple(point))
+            all_points.append(tuple(point))
 
-                step += downsample_factor
         x1 = all_points[0][0]
         x2 = start_point[0]
         y1 = all_points[0][1]
@@ -122,7 +133,7 @@ class DxfReader:
         elif e.dxftype() is 'LWPOLYLINE':
             if not self.is_hidden(e):
                 # TODO: different line types?
-                if e.dxf.handle == '20D':
+                if e.dxf.handle == '1e5':
                     print("here")
                 lwpolyline = []
                 bPrevBulge = False
@@ -138,6 +149,7 @@ class DxfReader:
                                 #else:  # If not closed but has a bulge then neglect
                                     #lwpolyline.append(point[:2])
                             center = arc_params[0]
+
                             start_angle = math.degrees(arc_params[1])
                             end_angle = math.degrees(arc_params[2])
                             radius = arc_params[3]
@@ -145,7 +157,6 @@ class DxfReader:
                             for arc_point in arc_lines:
                                 lwpolyline.append(arc_point)
                         else:
-                            # I only want the x,y coordinates
                             lwpolyline.append(point[:2])
                     if e.closed:
                         lwpolyline.append(lwpolyline[0])
@@ -275,7 +286,7 @@ class DxfReader:
                     list_e_types = []
                     b_name = block.name
                     insert = e.dxf.insert
-                    if b_name == "D97V":
+                    if b_name == "D121V":
                         print("here")
                     for b_e in block:
                         list_e_types.extend([b_e.dxftype()])
