@@ -291,7 +291,7 @@ class DxfReader:
                     list_e_types = []
                     b_name = block.name
                     insert = e.dxf.insert
-                    if b_name == "VRATA_91_NA_20":
+                    if e.dxf.handle == "46E8D":
                         print("here")
                     for b_e in block:
                         list_e_types.extend([b_e.dxftype()])
@@ -337,7 +337,8 @@ class DxfReader:
                     rotation = e.dxf.rotation
                     x_scale = e.dxf.xscale
                     y_scale = e.dxf.yscale
-
+                    if e.dxf.handle == '46F11':
+                        print("here")
                     position_ = e.dxf.insert[:2]
                     ext_vect = e.dxf.extrusion
                     if ext_vect[2] == -1:
@@ -347,21 +348,19 @@ class DxfReader:
                         x = position_[0]
                         y = position_[1]
                     position = (x, y)
+                    base_point = block.block.dxf.base_point
+                    new_origin = (base_point[0], base_point[1])
                     for idx, line in enumerate(lines):
                         id = ids[idx]
                         t_line = []
                         for point in line:
                             l_point = list(point)
                             # Scale
-                            l_point[0] = l_point[0] * x_scale
-                            l_point[1] = l_point[1] * y_scale
+                            l_point[0] = (l_point[0] - new_origin[0]) * x_scale
+                            l_point[1] = (l_point[1] - new_origin[1]) * y_scale
                             # Rotate
-                            temp_point_x = l_point[0]
-                            temp_point_y = l_point[1]
-                            l_point[0] = temp_point_x * math.cos(math.radians(rotation)) - \
-                                         temp_point_y * math.sin(math.radians(rotation))
-                            l_point[1] = temp_point_y * math.cos(math.radians(rotation)) + \
-                                         temp_point_x * math.sin(math.radians(rotation))
+                            l_point = rotate(new_origin, l_point, math.radians(rotation))
+
                             # Translate
                             l_point[0] += position[0]
                             l_point[1] += position[1]
@@ -482,3 +481,18 @@ class DxfReader:
         pcd.points = o3d.utility.Vector3dVector(xyz)
         o3d.io.write_point_cloud('data/pcd/test_pointcloud.pcd', pcd)
 
+
+def rotate(origin, point, angle):
+    """
+    Rotate a point counterclockwise by a given angle around a given origin.
+
+    The angle should be given in radians.
+    """
+    ox, oy = origin
+    px, py = point
+
+    qx = ox + math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy)
+    qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
+
+    rotated_point = [qx, qy]
+    return rotated_point
