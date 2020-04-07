@@ -38,7 +38,9 @@ class DxfReader:
             self.dxf_path = dxf_file_path
             print('Loading ' + dxf_file_path + '. May take a while!')
             self.doc = ezdxf.readfile(self.dxf_path)
+            print(self.doc.header['$ANGBASE'])
             self.msp = self.doc.modelspace()
+
             self.line_data = []
             self.id_data = []
             self.point_data = []
@@ -95,19 +97,20 @@ class DxfReader:
 
             all_points.append(tuple(point))
 
-        x1 = all_points[0][0]
-        x2 = start_point[0]
-        y1 = all_points[0][1]
-        y2 = start_point[1]
-        n = 5
+        if all_points:
+            x1 = all_points[0][0]
+            x2 = start_point[0]
+            y1 = all_points[0][1]
+            y2 = start_point[1]
+            n = 5
 
-        x_same = isclose(x1, x2, abs_tol=10**-n)
-        y_same = isclose(y1, y2, abs_tol=10 ** -n)
+            x_same = isclose(x1, x2, abs_tol=10**-n)
+            y_same = isclose(y1, y2, abs_tol=10 ** -n)
 
-        if x_same and y_same:
-            return all_points
-        else:
-            return all_points[::-1]
+            if x_same and y_same:
+                return all_points
+            else:
+                return all_points[::-1]
 
 
     def entity2line(self, e):
@@ -141,8 +144,9 @@ class DxfReader:
                             end_angle = math.degrees(arc_params[2])
                             radius = arc_params[3]
                             arc_points = self.arc_for_polylines(center, start_angle, end_angle, radius, point[:2])
-                            for arc_point in arc_points:
-                                lwpolyline.append(arc_point)
+                            if arc_points:
+                                for arc_point in arc_points:
+                                    lwpolyline.append(arc_point)
                         else:
                             lwpolyline.append(point[:2])
                     if e.closed:
@@ -328,7 +332,10 @@ class DxfReader:
         return line_out, id_out
 
     def extract_data(self):
+        i = 0
         for e in self.msp:
+            i += 1
+            print(str(len(self.msp)) + "/" + str(i))
             lines, ids = self.entity2line(e)
             if lines:
                 if e.dxftype() is 'INSERT':
@@ -396,6 +403,7 @@ class DxfReader:
         current_id = 0
 
         for idx, entity in enumerate(self.line_data):
+            print(str(len(self.line_data)) + "/" + str(idx))
             entity_id = self.id_data[idx]
             connectivity_list = []
             for point in entity:
@@ -440,6 +448,7 @@ class DxfReader:
                     '''
                     self.G.add_edge(node.id, node_connection)
         if visualize:
+            print("Visualizing")
             pos = nx.get_node_attributes(self.G, 'pos')
             ids = nx.get_node_attributes(self.G, 'id')
             myset = set(pos.values())
