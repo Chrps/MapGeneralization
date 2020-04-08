@@ -134,16 +134,19 @@ class DxfReader:
                     # points is a list of points with the format = (x, y, [start_width, [end_width, [bulge]]])
                     for idx, point in enumerate(points):
                         if point[4] != 0.0:  # i.e. we have a bulge value
+                            arc_params = None
                             try:
                                 arc_params = ezdxf.math.bulge_to_arc(start_point=point, end_point=points[idx+1], bulge=point[4])
                             except IndexError:
                                 if e.closed:
                                     arc_params = ezdxf.math.bulge_to_arc(start_point=point, end_point=points[0], bulge=point[4])
-                            center = arc_params[0]
-                            start_angle = math.degrees(arc_params[1])
-                            end_angle = math.degrees(arc_params[2])
-                            radius = arc_params[3]
-                            arc_points = self.arc_for_polylines(center, start_angle, end_angle, radius, point[:2])
+                            arc_points = []
+                            if arc_params is not None:
+                                center = arc_params[0]
+                                start_angle = math.degrees(arc_params[1])
+                                end_angle = math.degrees(arc_params[2])
+                                radius = arc_params[3]
+                                arc_points = self.arc_for_polylines(center, start_angle, end_angle, radius, point[:2])
                             if arc_points:
                                 for arc_point in arc_points:
                                     lwpolyline.append(arc_point)
@@ -174,8 +177,9 @@ class DxfReader:
                         end_angle = math.degrees(arc_params[2])
                         radius = arc_params[3]
                         arc_points = self.arc_for_polylines(center, start_angle, end_angle, radius, vertex.dxf.location[:2])
-                        for arc_point in arc_points:
-                            polyline.append(arc_point)
+                        if arc_points:
+                            for arc_point in arc_points:
+                                polyline.append(arc_point)
                     else:
                         point = vertex.dxf.location[:2]
                         polyline.append(point)
@@ -299,7 +303,6 @@ class DxfReader:
                         print("here")
                     for b_e in block:
                         list_e_types.extend([b_e.dxftype()])
-                        layer_name = b_e.dxf.layer
                         lines, ids = self.entity2line(b_e)
                         if b_e.dxftype() is 'INSERT':
                             ins_location = b_e.dxf.insert
