@@ -194,6 +194,9 @@ def get_features(file):
     embedding_feat = dpwlk.read_embeddings(file)
 
     # % Combine all features into one tensor
+    #  Compare length of feature vectors before cat
+    if norm_degrees.shape[0] != norm_ids.shape[0] or norm_ids.shape[0] != embedding_feat.shape[0]:
+        print("mismatch in feature vectors: norm_degrees {}, norm_ids {}, embedding_feat {}".format(norm_degrees.shape, norm_ids.shape, embedding_feat.shape))
     #features = torch.cat((norm_positions, norm_deg, norm_ids, embedding_feat), 1)
     features = torch.cat((norm_degrees, norm_ids, embedding_feat), 1)
 
