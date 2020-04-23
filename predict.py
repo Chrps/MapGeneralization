@@ -10,13 +10,13 @@ import argparse
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--predict-path', type=str, default='data/predict_file_list.txt')
+parser.add_argument('--predict-path', type=str, default='data/valid_file_list_Canterbury_and_AU.txt')
 parser.add_argument('--model_name', type=str, default='test_model')
 
 args = parser.parse_args()
 
 def load_model_txt(model_name):
-    model_txt = 'models/' + model_name + '/' + model_name + '.txt'
+    model_txt = 'models/test_model/' + model_name + '.txt'
     data = [line.rstrip() for line in open(model_txt)]
 
     # network train on ()
@@ -50,22 +50,22 @@ def predict(predict_path, model_name):
 
     # Load the trained model
     trained_net, config = models.get_model_and_config(net)
-    model = trained_net(n_features,
+    model = trained_net(3,
                 n_classes,
                 *config['extra_args'])
-    model_path = 'models/' + model_name + '/' + model_name + '.pth'
+    model_path = 'models/test_model/' + model_name + '.pth'
     model.load_state_dict(torch.load(model_path))
     print(model)
 
     # Get the list of files for prediction
-    data_path = 'data/'
-    folder = 'graphs'
-    pred_files = [os.path.join(data_path, folder, line.rstrip()) for line in open(predict_path)]
+    data_path = r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\graph_annotations"
+    pred_files = [os.path.join(data_path, line.rstrip()) for line in open(predict_path)]
     for file in pred_files:
         # Convert the gpickle file to a dgl graph
         dgl_g = graph_utils.convert_gpickle_to_dgl_graph(file)
         # Get the features from the given graph
-        features = graph_utils.chris_get_features(file)
+        nxg = nx.read_gpickle(file)
+        features = graph_utils.chris_get_features(nxg)
 
         model.eval()
         with torch.no_grad():

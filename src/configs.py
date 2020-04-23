@@ -1,20 +1,32 @@
 import torch.nn.functional as F
 
-GCN_CONFIG = {
-    'extra_args': [32, 3, F.relu, 0.5],
-    'lr': 1e-2,
+RGCN_CONFIG = {
+    'extra_args': [16, 3, F.relu, 0.1],
+    'lr': 1e-3,
     'weight_decay': 5e-4,
 }
 
+MoNet_CONFIG = {
+    'extra_args': [10, [32, 64, 128, 256]],
+    'lr': 1e-3,
+    'weight_decay': 5e-6,
+}
+
+GCN_CONFIG = {
+    'extra_args': [32, 16, F.relu, 0.0],
+    'lr': 1e-2,
+    'weight_decay': 5e-6,
+}
+
 GAT_CONFIG = {
-    'extra_args': [8, 1, [8] * 1 + [1], F.elu, 0.6, 0.6, 0.2, False],
-    'lr': 0.005,
+    'extra_args': [16, 16, [1] * 16 + [1], F.elu, 0.0, 0.0, 0.2, False],
+    'lr': 0.0005,
     'weight_decay': 5e-4,
 }
 
 GRAPHSAGE_CONFIG = {
-    'extra_args': [32, 3, F.relu, 0.5, 'tagcn'],
-    'lr': 1e-2,
+    'extra_args': [16, 16, F.relu, 0.0, 'gcn'],
+    'lr': 1e-3,
     'weight_decay': 5e-4,
 }
 
@@ -25,8 +37,8 @@ APPNP_CONFIG = {
 }
 
 TAGCN_CONFIG = {
-    'extra_args': [32, 3, F.relu, 0.5],
-    'lr': 1e-2,
+    'extra_args': [16, 16, F.relu, 0.0],
+    'lr': 1e-3,
     'weight_decay': 5e-4,
 }
 

@@ -12,12 +12,14 @@ import datetime
 import time
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--desired_net', type=str, default='tagcn')  # gcn, tagcn, graphsage, appnp, agnn, gin, chebnet
-parser.add_argument('--num-epochs', type=int, default=300)
-parser.add_argument('--train-path', type=str, default='data/train_file_list.txt')
-parser.add_argument('--valid-path', type=str, default='data/valid_file_list.txt')
+parser.add_argument('--desired_net', type=str, default='gat')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, chebnet
+parser.add_argument('--num-epochs', type=int, default=600)
+parser.add_argument('--batch-size', type=int, default=6)
+parser.add_argument('--train-path', type=str, default='data/train_file_list_Canterbury_and_AU.txt')
+parser.add_argument('--valid-path', type=str, default='data/valid_file_list_Canterbury_and_AU.txt')
 parser.add_argument('--num-classes', type=int, default=2)
 parser.add_argument('--model_name', type=str, default='test_model')
+parser.add_argument('--windowing', type=str, default=False)
 args = parser.parse_args()
 
 
@@ -42,13 +44,28 @@ def evaluate(model, g, features, labels):
         return correct.item() * 1.0 / len(labels), correct0.item() * 1.0 / len(
             labels0), correct1.item() * 1.0 / len(labels1)
 
+def moving_average(a, n=10) :
+    a_padded = np.pad(a, (n // 2, n - 1 - n // 2), mode='edge')
+    a_smooth = np.convolve(a_padded, np.ones((n,)) / n, mode='valid')
+    return a_smooth
 
 def plot_loss_and_acc(n_epochs, epoch_list, losses, acc_list, acc0_list, acc1_list):
     plt.axis([0, n_epochs, 0, 1])
-    plt.plot(losses, 'b', label="loss")
-    plt.plot(epoch_list, acc_list, 'r', label="acc all")
-    plt.plot(epoch_list, acc0_list, 'g', label="acc Non-Door")
-    plt.plot(epoch_list, acc1_list, color='orange', label="acc Door")
+    plt.plot(losses, 'b', alpha=0.3)
+    plt.plot(epoch_list, acc_list, 'r', alpha=0.3)
+    plt.plot(epoch_list, acc0_list, 'g', alpha=0.3)
+    plt.plot(epoch_list, acc1_list, color='orange', alpha=0.3)
+
+    avg_losses = list(moving_average(np.array(losses), n=20))
+    avg_acc_list = list(moving_average(np.array(acc_list)))
+    avg_acc0_list = list(moving_average(np.array(acc0_list)))
+    avg_acc1_list = list(moving_average(np.array(acc1_list)))
+
+    plt.plot(avg_losses, 'b', label="loss")
+    plt.plot(epoch_list, avg_acc_list, 'r', label="acc all")
+    plt.plot(epoch_list, avg_acc0_list, 'g', label="acc Non-Door")
+    plt.plot(epoch_list, avg_acc1_list, color='orange', label="acc Door")
+
     plt.legend()
     plt.show(block=False)
     plt.pause(0.0001)
@@ -61,9 +78,9 @@ def update_weights(labels):
 
     door_instances = float(len(labels1_idx))
     non_door_instances = float(len(labels0_idx))
-    non_door_weight = float("{:.4f}".format(door_instances / non_door_instances))  # specifying to 4 decimal places
-    door_weight = 1.0
-    weights = [non_door_weight, door_weight]
+    non_door_weight = float("{:.4f}".format(non_door_instances/(door_instances+non_door_instances)))  # specifying to 4 decimal places
+    door_weight = 1.0-non_door_weight
+    weights = [door_weight, non_door_weight]
     weights = torch.FloatTensor(weights)
     return weights
 
@@ -113,15 +130,15 @@ def collate(samples):
     return batched_graph, batched_labels, batched_features
 
 
-def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_name):
+def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_name, windowing, batch_size):
 
     # Retrieve dataset and prepare it for DataLoader
-    trainset = graph_utils.group_graphs_labels_features(train_path, 'graph_annotations')
-    data_loader = DataLoader(trainset, batch_size=1, shuffle=True,
+    trainset = graph_utils.group_graphs_labels_features(train_path, r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\graph_annotations', windowing=windowing)
+    data_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True,
                              collate_fn=collate)
 
     # Load the validation data
-    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(valid_path, 'graph_annotations')
+    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(valid_path, r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\graph_annotations', windowing=windowing)
 
     # create user specified model
     n_features = trainset[0][2].shape[1]  # number of features is same throughout, so just get shape of first graph
@@ -129,6 +146,8 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
     model = net(n_features,
                 num_classes,
                 *config['extra_args'])
+    print(n_features)
+
     print(model)
 
     # Define optimizer
@@ -191,9 +210,11 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
 if __name__ == '__main__':
     desired_net = args.desired_net
     num_epochs = args.num_epochs
+    batch_size = args.batch_size
     train_path = args.train_path
     valid_path = args.valid_path
     num_classes = args.num_classes
     model_name = args.model_name
+    windowing = args.windowing
 
-    train(desired_net, num_epochs, train_path, valid_path, num_classes, model_name)
+    train(desired_net, num_epochs, train_path, valid_path, num_classes, model_name, windowing, batch_size)

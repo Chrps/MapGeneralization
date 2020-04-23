@@ -2,7 +2,7 @@ import os
 import networkx as nx
 import matplotlib.pyplot as plt
 
-GRAPH_FILE = 'data/graph_annotations/brain_injury_centre_sub_w_annotations.gpickle'
+GRAPH_FILE = r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\graph_annotations\Canterbury\M S1 Newton Ground Floor_w_annotations.gpickle"
 WIN_X = 1*1000
 WIN_Y = 1*1000
 STRIDE_X = WIN_X
@@ -45,7 +45,7 @@ while win_pos[1] > min_pos[1]+STRIDE_Y:
         nodes = sample_window(positions, tl, br)
 
         # Show sliding window
-        '''tr = (win_pos[0]+WIN_X, win_pos[1]+WIN_Y)
+        tr = (win_pos[0]+WIN_X, win_pos[1]+WIN_Y)
         bl = (win_pos[0]-WIN_X, win_pos[1]-WIN_Y)
         nxg.add_node(original_nr_nodes + 1, pos=tl, color='r')
         nxg.add_node(original_nr_nodes + 2, pos=br, color='r')
@@ -57,20 +57,21 @@ while win_pos[1] > min_pos[1]+STRIDE_Y:
         nxg.add_edge(original_nr_nodes + 4, original_nr_nodes + 1)
         positions_tmp = nx.get_node_attributes(nxg, 'pos')
         nx.draw_networkx(nxg.to_undirected(), positions_tmp,
-                         with_labels=False, node_size=25, ax=ax)'''
+                         with_labels=False, node_size=25, ax=ax)
 
         sub_nxg = nxg.subgraph(nodes)
-        sub_nxg =  nx.relabel.convert_node_labels_to_integers(sub_nxg)
+        sub_nxg = nx.relabel.convert_node_labels_to_integers(sub_nxg)
         sub_positions = nx.get_node_attributes(sub_nxg, 'pos')
-        ax.cla()
-        nx.draw_networkx(sub_nxg.to_undirected(), sub_positions,
-                         with_labels=False, node_size=25, ax=ax)
+
+        #nx.draw_networkx(sub_nxg.to_undirected(), sub_positions,
+        #                 with_labels=False, node_size=25, ax=ax)
         plt.show(block=False)
-        #plt.pause(0.01)
+        plt.pause(1)
+        ax.cla()
         win_pos[0] += STRIDE_X
-        if sub_nxg.number_of_nodes() > 10:
-            nx.write_gpickle(sub_nxg, 'data/split_graphs/' + file_name + '/' + file_name + str(graph_file_idx) + '.gpickle')
-        graph_file_idx += 1
+        #if sub_nxg.number_of_nodes() > 10:
+        #    nx.write_gpickle(sub_nxg, 'data/split_graphs/' + file_name + '/' + file_name + str(graph_file_idx) + '.gpickle')
+        #graph_file_idx += 1
 
     win_pos[1] -= STRIDE_Y
     win_pos[0] = min_pos[0]+WIN_X

@@ -5,9 +5,46 @@ from dgl import DGLGraph
 import torch
 import numpy as np
 from src.deepwalk.deepwalk import DeepWalk
+from src.sliding_window_class import SlidingWindow
+sliding_window = SlidingWindow()
+
+def norm_ang(angle):
+    old_max = 180
+    old_min = -180
+    new_max = 1
+    new_min = 0
+    old_range = old_max - old_min
+    new_range = new_max - new_min
+    out_angle = (((angle - old_min) * new_range) / old_range) + new_min
+    return out_angle
+
+def calculate_angles(nxg):
+    angles = []
+    nx.set_node_attributes(nxg, angles, 'angle')
+    nx.set_edge_attributes(nxg, angles, 'angle')
+
+    # Calculate angle of each edge
+    for edge in nxg.edges:
+        pos1 = nxg.nodes[edge[0]]['pos']
+        pos2 = nxg.nodes[edge[1]]['pos']
+        deltaY = pos2[1] - pos1[1]
+        deltaX = pos2[0] - pos1[0]
+        angleInDegrees = np.degrees(np.arctan2(deltaY, deltaX))
+        norm_angle = norm_ang(angleInDegrees)
+        nxg.edges[edge]['angle'] = norm_angle
+
+    # Calculate mean angle for all edges going to node.
+    for node in nxg.nodes:
+        angle_sum = 0
+        for edge in nxg.edges(node):
+            angle_sum += nxg.edges[edge]['angle']
+        if len(nxg.edges(node)) == 0:
+            nxg.nodes[node]['angle'] = 0
+        else:
+            nxg.nodes[node]['angle'] = angle_sum/len(nxg.edges(node))
 
 
-def group_graphs_labels_features(data_list, folder):
+def group_graphs_labels_features(data_list, folder, windowing=False):
     data_path = 'data/'
     data_files = [os.path.join(data_path, folder, line.rstrip()) for line in open(data_list)]
 
@@ -16,24 +53,29 @@ def group_graphs_labels_features(data_list, folder):
 
     for idx, file in enumerate(data_files):
         graph = []
-        # Convert the gpickle file to a dgl graph for batching
-        dgl_g = convert_gpickle_to_dgl_graph(file)
-        # Get the annotated labels
-        labels = get_labels(file)
-        # Get the feature from the file
-        features = get_features(file)
+        nxg = nx.read_gpickle(file)
 
+
+        # Get the annotated labels
+        labels = get_labels(nxg)
+        # Get the feature from the file
+        features = chris_get_features(nxg)
+
+        dgl_g = DGLGraph()
+        dgl_g.from_networkx(nxg)
+        dgl_g.readonly()
+
+        # Append the information for batching
         graph.append(dgl_g)
         graph.append(labels)
         graph.append(features)
-
         dataset.append(graph)
 
     return dataset
 
 
 
-def batch_graphs(data_list, folder):
+def batch_graphs(data_list, folder, windowing=False):
     data_path = 'data/'
     data_files = [os.path.join(data_path, folder, line.rstrip()) for line in open(data_list)]
 
@@ -43,16 +85,39 @@ def batch_graphs(data_list, folder):
 
     for file in data_files:
         # Convert the gpickle file to a dgl graph for batching
-        dgl_g = convert_gpickle_to_dgl_graph(file)
-        # Get the annotated labels
-        labels = get_labels(file)
-        # Get the feature from the file
-        features = get_features(file)
+        #dgl_g = convert_gpickle_to_dgl_graph(file)
+        nxg = nx.read_gpickle(file)
 
-        # Append the information for batching
-        all_graphs.append(dgl_g)
-        all_labels.append(labels)
-        all_features.append(features)
+        if windowing:
+            nxg_list = sliding_window.perform_windowing(nxg)
+            for nxg in nxg_list:
+                # Get the annotated labels
+                labels = get_labels(nxg)
+                # Get the feature from the file
+                features = chris_get_features(nxg)
+
+                dgl_g = DGLGraph()
+                dgl_g.from_networkx(nxg)
+                dgl_g.readonly()
+
+                # Append the information for batching
+                all_graphs.append(dgl_g)
+                all_labels.append(labels)
+                all_features.append(features)
+        else:
+            # Get the annotated labels
+            labels = get_labels(nxg)
+            # Get the feature from the file
+            features = chris_get_features(nxg)
+
+            dgl_g = DGLGraph()
+            dgl_g.from_networkx(nxg)
+            dgl_g.readonly()
+
+            # Append the information for batching
+            all_graphs.append(dgl_g)
+            all_labels.append(labels)
+            all_features.append(features)
 
     # Batch the graphs
     batched_graph = dgl.batch(all_graphs)
@@ -69,8 +134,7 @@ def batch_graphs(data_list, folder):
     return batched_graph, conc_labels, conc_features
 
 
-def get_labels(file):
-    nxg = nx.read_gpickle(file)
+def get_labels(nxg):
     # Get labels from netx graph
     label_dict = nx.get_node_attributes(nxg, 'label')
     labels = list(label_dict.values())
@@ -135,9 +199,7 @@ def get_features(file):
 
     return features
 
-def chris_get_features(file):
-    # Read file as networkx graph and retrieve positions + labels
-    nxg = nx.read_gpickle(file)
+def chris_get_features(nxg):
 
     # % % Define some features for the graph
     # % Normalized positions
@@ -147,7 +209,9 @@ def chris_get_features(file):
     norm_positions = torch.FloatTensor(norm_positions)
 
     # % Normalized node degree (number of edges connected to node)
-    dgl_g = convert_gpickle_to_dgl_graph(file)
+    dgl_g = DGLGraph()
+    dgl_g.from_networkx(nxg)
+    dgl_g.readonly()
     norm_degrees = 1. / dgl_g.in_degrees().float().unsqueeze(1)
 
     # % Normalized unique identity (entity type [ARC/CRCLE/LINE])
@@ -167,6 +231,12 @@ def chris_get_features(file):
     #norm_ids = [float(i) / 4.0 for i in ids]
     norm_ids = torch.FloatTensor(np.asarray(ids).reshape(-1, 1))
 
+    # Angles:
+    calculate_angles(nxg)
+    angles = nx.get_node_attributes(nxg, 'angle')
+    angles = list(angles.values())
+    angles = torch.FloatTensor(np.asarray(angles).reshape(-1, 1))
+
     # % DeepWalk
     #dpwlk = DeepWalk(number_walks=4, walk_length=5, representation_size=2)
     # Create embedding file for given file
@@ -176,7 +246,7 @@ def chris_get_features(file):
 
     # % Combine all features into one tensor
     #features = torch.cat((norm_positions, norm_deg, norm_ids, embedding_feat), 1)
-    features = torch.cat((norm_degrees, norm_identity, norm_ids), 1)
+    features = torch.cat((norm_degrees, norm_identity, angles, norm_ids), 1)
 
     return features
 

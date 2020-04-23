@@ -1,9 +1,13 @@
 import torch.nn as nn
+import torch
+import dgl.function as fn
+from functools import partial
+import torch.nn.functional as F
 from dgl.nn.pytorch import GraphConv, GATConv, SAGEConv, GINConv,\
-    APPNPConv, TAGConv, SGConv, AGNNConv, ChebConv
+    APPNPConv, TAGConv, SGConv, AGNNConv, ChebConv, GMMConv
 from src.configs import GCN_CONFIG, GAT_CONFIG, GRAPHSAGE_CONFIG, \
-    APPNP_CONFIG, TAGCN_CONFIG, AGNN_CONFIG, SGC_CONFIG, GIN_CONFIG, CHEBNET_CONFIG
-
+    APPNP_CONFIG, TAGCN_CONFIG, AGNN_CONFIG, SGC_CONFIG, GIN_CONFIG, CHEBNET_CONFIG, MoNet_CONFIG
+from dgl.nn.pytorch.glob import MaxPooling
 
 def get_model_and_config(name):
     name = name.lower()
@@ -11,6 +15,8 @@ def get_model_and_config(name):
         return GCN, GCN_CONFIG
     elif name == 'gat':
         return GAT, GAT_CONFIG
+    elif name == 'monet':
+        return MoNet, MoNet_CONFIG
     elif name == 'graphsage':
         return GraphSAGE, GRAPHSAGE_CONFIG
     elif name == 'appnp':
@@ -58,8 +64,7 @@ class GCN(nn.Module):
 
 class GAT(nn.Module):
     def __init__(self,
-                 g,
-                 in_dim,
+                 in_feats,
                  num_classes,
                  num_hidden,
                  num_layers,
@@ -70,13 +75,12 @@ class GAT(nn.Module):
                  negative_slope,
                  residual):
         super(GAT, self).__init__()
-        self.g = g
         self.num_layers = num_layers
         self.gat_layers = nn.ModuleList()
         self.activation = activation
         # input projection (no residual)
         self.gat_layers.append(GATConv(
-            in_dim, num_hidden, heads[0],
+            in_feats, num_hidden, heads[0],
             feat_drop, attn_drop, negative_slope, False, self.activation))
         # hidden layers
         for l in range(1, num_layers):
@@ -89,12 +93,12 @@ class GAT(nn.Module):
             num_hidden * heads[-2], num_classes, heads[-1],
             feat_drop, attn_drop, negative_slope, residual, None))
 
-    def forward(self, inputs):
-        h = inputs
+    def forward(self, g, features):
+        h = features
         for l in range(self.num_layers):
-            h = self.gat_layers[l](self.g, h).flatten(1)
+            h = self.gat_layers[l](g, h).flatten(1)
         # output projection
-        logits = self.gat_layers[-1](self.g, h).mean(1)
+        logits = self.gat_layers[-1](g, h).mean(1)
         return logits
 
 
@@ -299,6 +303,7 @@ class GIN(nn.Module):
             h = layer(g, h)
         return h
 
+
 class ChebNet(nn.Module):
     def __init__(self,
                  in_feats,
@@ -324,5 +329,35 @@ class ChebNet(nn.Module):
     def forward(self, g, features):
         h = features
         for layer in self.layers:
-            h = layer(g, h, [2])
+            h = layer(g, h)
+            #h = layer(g, h, [2])
         return h
+
+
+class MoNet(nn.Module):
+    def __init__(self,
+                 in_feats,
+                 n_classes,
+                 n_kernels,
+                 hiddens):
+        super(MoNet, self).__init__()
+        self.layers = nn.ModuleList()
+        # Input layer
+        self.layers.append(
+            GMMConv(in_feats, hiddens[0], 4, n_kernels))
+
+        # Hidden layer
+        for i in range(1, len(hiddens)):
+            self.layers.append(GMMConv(hiddens[i - 1], hiddens[i], 4, n_kernels))
+
+        self.cls = nn.Sequential(
+            nn.Linear(hiddens[-1], n_classes),
+            nn.LogSoftmax()
+        )
+
+    def forward(self, g, features):
+        h = features
+        for i, layer in enumerate(self.layers):
+            h = layer(g, h)
+        return h
+
