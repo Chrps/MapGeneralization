@@ -10,10 +10,11 @@ from torch.utils.data import DataLoader
 import dgl
 import datetime
 import time
+from sklearn.metrics import balanced_accuracy_score
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--desired_net', type=str, default='gat')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, chebnet
-parser.add_argument('--num-epochs', type=int, default=600)
+parser.add_argument('--num-epochs', type=int, default=1000)
 parser.add_argument('--batch-size', type=int, default=6)
 parser.add_argument('--train-path', type=str, default='data/train_file_list_Canterbury_and_AU.txt')
 parser.add_argument('--valid-path', type=str, default='data/valid_file_list_Canterbury_and_AU.txt')
@@ -30,7 +31,7 @@ def evaluate(model, g, features, labels):
         logits = logits
         labels = labels
         _, indices = torch.max(logits, dim=1)
-        correct = torch.sum(indices == labels)
+        #correct = torch.sum(indices == labels)
 
         labels0_idx = np.where(labels.numpy() == 0)[0]
         labels1_idx = np.where(labels.numpy() == 1)[0]
@@ -38,37 +39,52 @@ def evaluate(model, g, features, labels):
         indices1 = torch.LongTensor(np.take(indices.numpy(), labels1_idx))
         labels0 = torch.LongTensor(np.take(labels.numpy(), labels0_idx))
         labels1 = torch.LongTensor(np.take(labels.numpy(), labels1_idx))
+        # For class 0 and class 1
         correct0 = torch.sum(indices0 == labels0)
         correct1 = torch.sum(indices1 == labels1)
 
-        return correct.item() * 1.0 / len(labels), correct0.item() * 1.0 / len(
-            labels0), correct1.item() * 1.0 / len(labels1)
+        #correct.item() * 1.0 / len(labels)
+        class0_acc = correct0.item() * 1.0 / len(labels0)
+        class1_acc = correct1.item() * 1.0 / len(labels1)
+
+        pred = indices.numpy()
+        labels = labels.numpy()
+        #f1 = f1_score(y_true=labels, y_pred=pred, average='weighted')
+        overall_acc = balanced_accuracy_score(y_true=labels, y_pred=pred)
+
+        return overall_acc, class0_acc, class1_acc
 
 def moving_average(a, n=10) :
     a_padded = np.pad(a, (n // 2, n - 1 - n // 2), mode='edge')
     a_smooth = np.convolve(a_padded, np.ones((n,)) / n, mode='valid')
     return a_smooth
 
-def plot_loss_and_acc(n_epochs, epoch_list, losses, acc_list, acc0_list, acc1_list):
+def plot_loss_and_acc(n_epochs, epoch_list, losses, overall_acc_list, acc0_list, acc1_list, model_name):
     plt.axis([0, n_epochs, 0, 1])
     plt.plot(losses, 'b', alpha=0.3)
-    plt.plot(epoch_list, acc_list, 'r', alpha=0.3)
-    plt.plot(epoch_list, acc0_list, 'g', alpha=0.3)
-    plt.plot(epoch_list, acc1_list, color='orange', alpha=0.3)
+    plt.plot(epoch_list, overall_acc_list, 'r', alpha=0.3)
+    #plt.plot(epoch_list, acc0_list, 'g', alpha=0.3)
+    #plt.plot(epoch_list, acc1_list, color='orange', alpha=0.3)
 
     avg_losses = list(moving_average(np.array(losses), n=20))
-    avg_acc_list = list(moving_average(np.array(acc_list)))
+    avg_f1_list = list(moving_average(np.array(overall_acc_list)))
     avg_acc0_list = list(moving_average(np.array(acc0_list)))
     avg_acc1_list = list(moving_average(np.array(acc1_list)))
 
-    plt.plot(avg_losses, 'b', label="loss")
-    plt.plot(epoch_list, avg_acc_list, 'r', label="acc all")
-    plt.plot(epoch_list, avg_acc0_list, 'g', label="acc Non-Door")
-    plt.plot(epoch_list, avg_acc1_list, color='orange', label="acc Door")
+    plt.plot(epoch_list, avg_f1_list, 'r', label="Overall Accuracy")
+    plt.plot(avg_losses, 'b', label="Loss")
+    #plt.plot(epoch_list, avg_acc0_list, 'g', label="acc Non-Door")
+    #plt.plot(epoch_list, avg_acc1_list, color='orange', label="acc Door")
+    plt.xlabel('Epochs')
 
     plt.legend()
     plt.show(block=False)
     plt.pause(0.0001)
+    if epoch_list[-1] % 100 == 0 or epoch_list[-1] == n_epochs:
+        figure_name = model_name + '_f1_loss.png'
+        # Where to save image
+        directory = 'models/' + model_name + '/'
+        plt.savefig(directory + figure_name)
     plt.clf()
 
 
@@ -133,12 +149,12 @@ def collate(samples):
 def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_name, windowing, batch_size):
 
     # Retrieve dataset and prepare it for DataLoader
-    trainset = graph_utils.group_graphs_labels_features(train_path, r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\graph_annotations', windowing=windowing)
+    trainset = graph_utils.group_graphs_labels_features(train_path, r"D:\University Stuff\OneDrive - Aalborg Universitet\P10 - Master's Thesis\data\graph_annotations", windowing=windowing)
     data_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True,
                              collate_fn=collate)
 
     # Load the validation data
-    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(valid_path, r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\graph_annotations', windowing=windowing)
+    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(valid_path, r"D:\University Stuff\OneDrive - Aalborg Universitet\P10 - Master's Thesis\data\graph_annotations", windowing=windowing)
 
     # create user specified model
     n_features = trainset[0][2].shape[1]  # number of features is same throughout, so just get shape of first graph
@@ -163,7 +179,7 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
     door_acc_list = []
     weights_list = []
     epoch_list = []
-    best_val_acc = 0.0
+    best_acc_score = 0.0
 
     print('\n --- BEGIN TRAINING ---')
     start_time = time.time()
@@ -192,18 +208,18 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
         losses.append(loss.item())
 
         # Save and evaluate model
-        overall_val_acc, non_door_acc, door_acc = evaluate(model, valid_g, valid_features, valid_labels)
+        overall_acc, non_door_acc, door_acc = evaluate(model, valid_g, valid_features, valid_labels)
 
-        if epoch > 30 and best_val_acc < overall_val_acc:
-            best_val_acc = overall_val_acc
+        if epoch > 30 and best_acc_score < overall_acc:
+            best_f1_score = overall_acc
             save_model(model, model_name, epoch, desired_net, n_features, num_classes, start_time)
-        print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Total Acc {:.4f} |"
-              "Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_val_acc, np.mean(dur)))
-        overall_acc_list.append(overall_val_acc)
+        print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | F1 Score {:.4f} |"
+              "Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
+        overall_acc_list.append(overall_acc)
         non_door_acc_list.append(non_door_acc)
         door_acc_list.append(door_acc)
         epoch_list.append(epoch)
-        plot_loss_and_acc(num_epochs, epoch_list, losses, overall_acc_list, non_door_acc_list, door_acc_list)
+        plot_loss_and_acc(num_epochs, epoch_list, losses, overall_acc_list, non_door_acc_list, door_acc_list, model_name)
 
 
 
