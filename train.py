@@ -62,16 +62,16 @@ def moving_average(a, n=10) :
 def plot_loss_and_acc(n_epochs, epoch_list, losses, overall_acc_list, acc0_list, acc1_list, model_name):
     plt.axis([0, n_epochs, 0, 1])
     plt.plot(losses, 'b', alpha=0.3)
-    plt.plot(epoch_list, overall_acc_list, 'r', alpha=0.3)
+    plt.plot(epoch_list, overall_acc_list, 'r', label="Overall Accuracy")
     #plt.plot(epoch_list, acc0_list, 'g', alpha=0.3)
     #plt.plot(epoch_list, acc1_list, color='orange', alpha=0.3)
 
     avg_losses = list(moving_average(np.array(losses), n=20))
-    avg_f1_list = list(moving_average(np.array(overall_acc_list)))
-    avg_acc0_list = list(moving_average(np.array(acc0_list)))
-    avg_acc1_list = list(moving_average(np.array(acc1_list)))
+    #avg_overall_acc_list = list(moving_average(np.array(overall_acc_list)))
+    #avg_acc0_list = list(moving_average(np.array(acc0_list)))
+    #avg_acc1_list = list(moving_average(np.array(acc1_list)))
 
-    plt.plot(epoch_list, avg_f1_list, 'r', label="Overall Accuracy")
+    #plt.plot(epoch_list, avg_overall_acc_list, 'r', label="Overall Accuracy")
     plt.plot(avg_losses, 'b', label="Loss")
     #plt.plot(epoch_list, avg_acc0_list, 'g', label="acc Non-Door")
     #plt.plot(epoch_list, avg_acc1_list, color='orange', label="acc Door")
@@ -81,7 +81,7 @@ def plot_loss_and_acc(n_epochs, epoch_list, losses, overall_acc_list, acc0_list,
     plt.show(block=False)
     plt.pause(0.0001)
     if epoch_list[-1] % 100 == 0 or epoch_list[-1] == n_epochs:
-        figure_name = model_name + '_f1_loss.png'
+        figure_name = model_name + '_accuracy_loss.png'
         # Where to save image
         directory = 'models/' + model_name + '/'
         plt.savefig(directory + figure_name)
@@ -186,8 +186,7 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
 
     for epoch in range(num_epochs):
         model.train()
-        if epoch >= 3:
-            t0 = time.time()
+        t0 = time.time()
         for iter, (bg, labels, features) in enumerate(data_loader):
             # forward
             if epoch == 0:
@@ -201,25 +200,25 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-        if epoch >= 3:
+        losses.append(loss.item())
+        # Evaluate after every 5th epoch
+        if epoch % 5 == 0 or epoch == num_epochs:
+            # Get Time
             dur.append(time.time() - t0)
 
-        losses.append(loss.item())
+            # Evaluate model
+            overall_acc, non_door_acc, door_acc = evaluate(model, valid_g, valid_features, valid_labels)
 
-        # Save and evaluate model
-        overall_acc, non_door_acc, door_acc = evaluate(model, valid_g, valid_features, valid_labels)
-
-        if epoch > 30 and best_acc_score < overall_acc:
-            best_f1_score = overall_acc
-            save_model(model, model_name, epoch, desired_net, n_features, num_classes, start_time)
-        print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | F1 Score {:.4f} |"
-              "Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
-        overall_acc_list.append(overall_acc)
-        non_door_acc_list.append(non_door_acc)
-        door_acc_list.append(door_acc)
-        epoch_list.append(epoch)
-        plot_loss_and_acc(num_epochs, epoch_list, losses, overall_acc_list, non_door_acc_list, door_acc_list, model_name)
+            if epoch > 30 and best_acc_score < overall_acc:
+                best_acc_score = overall_acc
+                save_model(model, model_name, epoch, desired_net, n_features, num_classes, start_time)
+            print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Overall Acc {:.4f} |"
+                  "Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
+            overall_acc_list.append(overall_acc)
+            non_door_acc_list.append(non_door_acc)
+            door_acc_list.append(door_acc)
+            epoch_list.append(epoch)
+            plot_loss_and_acc(num_epochs, epoch_list, losses, overall_acc_list, non_door_acc_list, door_acc_list, model_name)
 
 
 
