@@ -19,7 +19,6 @@ parser.add_argument('--batch-size', type=int, default=6)
 parser.add_argument('--train-path', type=str, default='data/train_file_list_Canterbury_and_AU.txt')
 parser.add_argument('--valid-path', type=str, default='data/valid_file_list_Canterbury_and_AU.txt')
 parser.add_argument('--num-classes', type=int, default=2)
-parser.add_argument('--model_name', type=str, default='test_model')
 parser.add_argument('--windowing', type=str, default=False)
 args = parser.parse_args()
 
@@ -59,7 +58,7 @@ def moving_average(a, n=10) :
     a_smooth = np.convolve(a_padded, np.ones((n,)) / n, mode='valid')
     return a_smooth
 
-def plot_loss_and_acc(n_epochs, epoch_list, losses, overall_acc_list, acc0_list, acc1_list, model_name):
+def plot_loss_and_acc(n_epochs, epoch_list, losses, overall_acc_list, acc0_list, acc1_list, desired_net, start_date):
     plt.axis([0, n_epochs, 0, 1])
     plt.plot(losses, 'b', alpha=0.3)
     plt.plot(epoch_list, overall_acc_list, 'r', label="Overall Accuracy")
@@ -80,11 +79,15 @@ def plot_loss_and_acc(n_epochs, epoch_list, losses, overall_acc_list, acc0_list,
     plt.legend()
     plt.show(block=False)
     plt.pause(0.0001)
-    if epoch_list[-1] % 100 == 0 or epoch_list[-1] == n_epochs:
-        figure_name = model_name + '_accuracy_loss.png'
+    if epoch_list[-1] % 10 == 0 or epoch_list[-1] == n_epochs:
+        figure_name = desired_net + '_accuracy_loss.png'
         # Where to save image
-        directory = 'models/' + model_name + '/'
-        plt.savefig(directory + figure_name)
+        start_timestamp = start_date.strftime("_%y-%m-%d_%H-%M-%S")
+        save_name = desired_net + start_timestamp
+        model_dir = 'models/' + save_name + '/'
+        if not os.path.exists(model_dir):
+            os.mkdir(model_dir)
+        plt.savefig(model_dir + figure_name)
     plt.clf()
 
 
@@ -101,36 +104,34 @@ def update_weights(labels):
     return weights
 
 
-def save_model(model, model_name, epoch, desired_net, n_features, num_classes, start_time):
+def save_model(model, epoch, desired_net, n_features, num_classes, start_date, overall_acc):
+    _, config = models.get_model_and_config(desired_net)
     # Saved the model
-    model_dir = 'models/' + model_name
+    start_timestamp = start_date.strftime("_%y-%m-%d_%H-%M-%S")
+    save_name = desired_net + start_timestamp
+    model_dir = 'models/' + save_name
     if not os.path.exists(model_dir):
         os.mkdir(model_dir)
-    model_path = model_dir + '/' + model_name + '.pth'
+    model_path = model_dir + '/model.pth'
     torch.save(model.state_dict(), model_path)
     # %% Log Total Time
-    end_time = time.time()
-    total_time = end_time - start_time
-    total_time = float(total_time)
-    day = total_time // (24 * 3600)
-    total_time = total_time % (24 * 3600)
-    hour = total_time // 3600
-    total_time %= 3600
-    minutes = total_time // 60
-    total_time %= 60
-    seconds = total_time
+    end_date = datetime.datetime.now()
+    diff_date = end_date - start_date
+
     # Save .txt file with model cfgs to load for predictions
-    with open('models/' + model_name + '/' + model_name + '.txt', "w+") as model_txt:
+    with open(model_dir + "/predict_info.txt", "w+") as model_txt:
         model_txt.write(desired_net + '\n')
         model_txt.write(str(n_features) + '\n')
         model_txt.write(str(num_classes))
-    with open('models/' + model_name + '/meta.txt', "w+") as model_txt:
+    with open(model_dir + '/meta.txt', "w+") as model_txt:
         model_txt.write(str(datetime.datetime.now()) + '\n')
-        model_txt.write('Total Training Time (d:h:m:s):  %d:%d:%d:%d' % (day, hour, minutes, seconds) + '\n')
+        model_txt.write('Total Training Time: ' + str(diff_date) + '\n')
         model_txt.write('Model Type: ' + desired_net + '\n')
+        model_txt.write('Model Config: ' + str(config['extra_args']) + " lr: " + str(config['lr']) + " weight decay: " + str(config['weight_decay']) + '\n')
         model_txt.write('Number of Features: ' + str(n_features) + '\n')
         model_txt.write('Number of Classes: ' + str(num_classes) + '\n')
         model_txt.write('Saved at Epoch: ' + str(epoch) + '\n')
+        model_txt.write('Accuracy: %.2f' % overall_acc)
 
 
 def collate(samples):
@@ -146,15 +147,15 @@ def collate(samples):
     return batched_graph, batched_labels, batched_features
 
 
-def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_name, windowing, batch_size):
+def train(desired_net, num_epochs, train_path, valid_path, num_classes, windowing, batch_size):
 
     # Retrieve dataset and prepare it for DataLoader
-    trainset = graph_utils.group_graphs_labels_features(train_path, r"D:\University Stuff\OneDrive - Aalborg Universitet\P10 - Master's Thesis\data\graph_annotations", windowing=windowing)
+    trainset = graph_utils.group_graphs_labels_features(train_path, r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\graph_annotations", windowing=windowing)
     data_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True,
                              collate_fn=collate)
 
     # Load the validation data
-    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(valid_path, r"D:\University Stuff\OneDrive - Aalborg Universitet\P10 - Master's Thesis\data\graph_annotations", windowing=windowing)
+    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(valid_path, r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\graph_annotations", windowing=windowing)
 
     # create user specified model
     n_features = trainset[0][2].shape[1]  # number of features is same throughout, so just get shape of first graph
@@ -162,8 +163,6 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
     model = net(n_features,
                 num_classes,
                 *config['extra_args'])
-    print(n_features)
-
     print(model)
 
     # Define optimizer
@@ -182,7 +181,7 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
     best_acc_score = 0.0
 
     print('\n --- BEGIN TRAINING ---')
-    start_time = time.time()
+    start_date = datetime.datetime.now()
 
     for epoch in range(num_epochs):
         model.train()
@@ -211,16 +210,14 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, model_na
 
             if epoch > 30 and best_acc_score < overall_acc:
                 best_acc_score = overall_acc
-                save_model(model, model_name, epoch, desired_net, n_features, num_classes, start_time)
+                save_model(model, epoch, desired_net, n_features, num_classes, start_date, overall_acc)
             print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Overall Acc {:.4f} |"
                   "Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
-            overall_acc_list.append(overall_acc)
-            non_door_acc_list.append(non_door_acc)
-            door_acc_list.append(door_acc)
-            epoch_list.append(epoch)
-            plot_loss_and_acc(num_epochs, epoch_list, losses, overall_acc_list, non_door_acc_list, door_acc_list, model_name)
-
-
+        overall_acc_list.append(overall_acc)
+        non_door_acc_list.append(non_door_acc)
+        door_acc_list.append(door_acc)
+        epoch_list.append(epoch)
+        plot_loss_and_acc(num_epochs, epoch_list, losses, overall_acc_list, non_door_acc_list, door_acc_list, desired_net, start_date)
 
 if __name__ == '__main__':
     desired_net = args.desired_net
@@ -229,7 +226,6 @@ if __name__ == '__main__':
     train_path = args.train_path
     valid_path = args.valid_path
     num_classes = args.num_classes
-    model_name = args.model_name
     windowing = args.windowing
 
-    train(desired_net, num_epochs, train_path, valid_path, num_classes, model_name, windowing, batch_size)
+    train(desired_net, num_epochs, train_path, valid_path, num_classes, windowing, batch_size)
