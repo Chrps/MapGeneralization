@@ -60,6 +60,5 @@ Canterbury/M S1 Johnson First Floor_w_annotations.gpickle
 Canterbury/M S1 Johnson Ground Floor_w_annotations.gpickle
 Canterbury/M S1 Laud First Floor_w_annotations.gpickle
 Canterbury/M S1 Laud Lower Ground Floor_w_annotations.gpickle
-Canterbury/M S1 Maxwell Davies Ground Floor_sub_w_annotations.gpickle
 Canterbury/M S1 Moore Ground Floor_w_annotations.gpickle
 Canterbury/M S1 Newton First Floor_w_annotations.gpickle
