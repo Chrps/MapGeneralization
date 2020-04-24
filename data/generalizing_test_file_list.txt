@@ -1,0 +1,4 @@
+Kohls/Bldg1_Level1_w_annotations.gpickle
+Kohls/Bldg1_LevelG_w_annotations.gpickle
+Kohls/NY Design Studio 18TH_FLOOR_PLAN 10-26-16_w_annotations.gpickle
+RTX/511D_w_annotations.gpickle

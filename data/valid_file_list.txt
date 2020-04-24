@@ -1,1 +1,14 @@
-xray_room_w_annotations.gpickle
+AU/A1325PE_0_w_annotations.gpickle
+AU/A1325PE_4_w_annotations.gpickle
+AU/L1410_H1_E3_K13.03_B07.01_N01_ZEtage_3_w_annotations.gpickle
+AU/L1321_H1_E1_K13.03_B07.01_N01_ZEtage_1_w_annotations.gpickle
+AU/L1323_H1_E4_K13.03_B07.01_N001_ZEtage_4_w_annotations.gpickle
+AU/L1328_H1_E3_K13.03_B07.01_N001_ZEtage_3_w_annotations.gpickle
+AU/L1414_H1_E2_K13.03_B07.01_N01_ZEtage_2_w_annotations.gpickle
+AU/L1415_H1_E0_K13.03_B07.01_N01_ZEtage_0_w_annotations.gpickle
+Parken/COP_0_BASE_sub2_w_annotations.gpickle
+Parken/COP_4_BASE_NEW_sub1_w_annotations.gpickle
+Canterbury/M S1 Becket Ground Floor_w_annotations.gpickle
+Canterbury/M S1 Chaplaincy Centre Ground Floor_w_annotations.gpickle
+Canterbury/M S1 Erasmus Second Floor_w_annotations.gpickle
+Canterbury/M S1 Estates Ground Floor_w_annotations.gpickle
