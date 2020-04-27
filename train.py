@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-import time
 import src.graph_utils as graph_utils
 import src.models as models
 import matplotlib.pyplot as plt
@@ -14,10 +13,10 @@ from sklearn.metrics import balanced_accuracy_score
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--desired_net', type=str, default='gat')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, chebnet
-parser.add_argument('--num-epochs', type=int, default=1000)
-parser.add_argument('--batch-size', type=int, default=6)
-parser.add_argument('--train-path', type=str, default='data/train_file_list_Canterbury_and_AU.txt')
-parser.add_argument('--valid-path', type=str, default='data/valid_file_list_Canterbury_and_AU.txt')
+parser.add_argument('--num-epochs', type=int, default=40)
+parser.add_argument('--batch-size', type=int, default=5)
+parser.add_argument('--train-path', type=str, default='data/generalizing_test_file_list.txt')
+parser.add_argument('--valid-path', type=str, default='data/generalizing_test_file_list.txt')
 parser.add_argument('--num-classes', type=int, default=2)
 parser.add_argument('--windowing', type=str, default=False)
 args = parser.parse_args()
@@ -212,7 +211,7 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, windowin
                 best_acc_score = overall_acc
                 save_model(model, epoch, desired_net, n_features, num_classes, start_date, overall_acc)
             print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Overall Acc {:.4f} |"
-                  "Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
+                  "Pr. Epoch Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
         overall_acc_list.append(overall_acc)
         non_door_acc_list.append(non_door_acc)
         door_acc_list.append(door_acc)

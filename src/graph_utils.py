@@ -8,6 +8,7 @@ from src.deepwalk.deepwalk import DeepWalk
 from src.sliding_window_class import SlidingWindow
 sliding_window = SlidingWindow()
 
+
 def norm_ang(angle):
     old_max = 180
     old_min = -180

@@ -13,14 +13,14 @@ MoNet_CONFIG = {
 }
 
 GCN_CONFIG = {
-    'extra_args': [32, 16, F.relu, 0.0],
-    'lr': 1e-2,
-    'weight_decay': 5e-6,
+    'extra_args': [16, 16, F.relu, 0.0],
+    'lr': 1e-3,
+    'weight_decay': 5e-4,
 }
 
 GAT_CONFIG = {
-    'extra_args': [16, 16, [1] * 16 + [1], F.elu, 0.0, 0.0, 0.2, False],
-    'lr': 0.0005,
+    'extra_args': [16, 16, [3] * 16 + [1], F.elu, 0.0, 0.0, 0.2, False],
+    'lr': 1e-3,
     'weight_decay': 5e-4,
 }
 
@@ -31,8 +31,8 @@ GRAPHSAGE_CONFIG = {
 }
 
 APPNP_CONFIG = {
-    'extra_args': [32, 3, F.relu, 0.5, 0.5, 0.1, 10],
-    'lr': 1e-2,
+    'extra_args': [16, 16, F.relu, 0.0, 0.0, 0.1, 10],
+    'lr': 1e-3,
     'weight_decay': 5e-4,
 }
 
@@ -43,8 +43,8 @@ TAGCN_CONFIG = {
 }
 
 AGNN_CONFIG = {
-    'extra_args': [32, 2, 1.0, True, 0.5],
-    'lr': 1e-2,
+    'extra_args': [16, 16, 1.0, True, 0.0],
+    'lr': 1e-3,
     'weight_decay': 5e-4,
 }
 
@@ -55,13 +55,13 @@ SGC_CONFIG = {
 }
 
 GIN_CONFIG = {
-    'extra_args': [32, 3, 0, True],
-    'lr': 1e-2,
-    'weight_decay': 5e-6,
+    'extra_args': [16, 16, 0, True],
+    'lr': 1e-3,
+    'weight_decay': 5e-4,
 }
 
 CHEBNET_CONFIG = {
-    'extra_args': [32, 3, 2, True],
-    'lr': 1e-2,
+    'extra_args': [16, 16, 2, True],
+    'lr': 1e-3,
     'weight_decay': 5e-4,
 }
