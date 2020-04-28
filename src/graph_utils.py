@@ -250,7 +250,7 @@ def chris_get_features(nxg):
 
     # % Combine all features into one tensor
     #features = torch.cat((norm_positions, norm_deg, norm_ids, embedding_feat), 1)
-    features = torch.cat((norm_degrees, norm_identity, angles, norm_ids), 1)
+    features = torch.cat((norm_degrees, norm_identity, angles), 1)
 
     return features
 
