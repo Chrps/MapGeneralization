@@ -19,12 +19,15 @@ def norm_ang(angle):
     out_angle = (((angle - old_min) * new_range) / old_range) + new_min
     return out_angle
 
-def calculate_angles(nxg):
+def calculate_angles_and_length(nxg):
     angles = []
+    lengths = []
     nx.set_node_attributes(nxg, angles, 'angle')
     nx.set_edge_attributes(nxg, angles, 'angle')
+    nx.set_node_attributes(nxg, lengths, 'length')
+    nx.set_edge_attributes(nxg, lengths, 'length')
 
-    # Calculate angle of each edge
+    # Calculate angle and distance of each edge
     for edge in nxg.edges:
         pos1 = nxg.nodes[edge[0]]['pos']
         pos2 = nxg.nodes[edge[1]]['pos']
@@ -34,15 +37,23 @@ def calculate_angles(nxg):
         norm_angle = norm_ang(angleInDegrees)
         nxg.edges[edge]['angle'] = norm_angle
 
+        length = np.sqrt((pos2[0]-pos1[0])**2 + (pos2[1]-pos1[1])**2)
+        norm_length = 1/length
+        nxg.edges[edge]['length'] = norm_length
+
     # Calculate mean angle for all edges going to node.
     for node in nxg.nodes:
         angle_sum = 0
+        length_sum = 0
         for edge in nxg.edges(node):
             angle_sum += nxg.edges[edge]['angle']
+            length_sum += nxg.edges[edge]['length']
         if len(nxg.edges(node)) == 0:
             nxg.nodes[node]['angle'] = 0
+            nxg.nodes[node]['length'] = 0
         else:
-            nxg.nodes[node]['angle'] = angle_sum/len(nxg.edges(node))
+            nxg.nodes[node]['angle'] = angle_sum / len(nxg.edges(node))
+            nxg.nodes[node]['length'] = length_sum / len(nxg.edges(node))
 
 
 def group_graphs_labels_features(data_list, folder, windowing=False):
@@ -113,6 +124,7 @@ def batch_graphs(data_list, folder, windowing=False):
 
             dgl_g = DGLGraph()
             dgl_g.from_networkx(nxg)
+            #dgl_g.from_networkx(nxg, edge_attrs=['length'])
             dgl_g.readonly()
 
             # Append the information for batching
@@ -148,6 +160,7 @@ def convert_gpickle_to_dgl_graph(file):
     # Define DGL graph from netx graph
     dgl_g = DGLGraph()
     dgl_g.from_networkx(nxg)
+    #dgl_g.from_networkx(nxg, edge_attrs=['length'])
     dgl_g.readonly()
 
     return dgl_g
@@ -236,10 +249,14 @@ def chris_get_features(nxg):
     norm_ids = torch.FloatTensor(np.asarray(ids).reshape(-1, 1))
 
     # Angles:
-    calculate_angles(nxg)
+    calculate_angles_and_length(nxg)
     angles = nx.get_node_attributes(nxg, 'angle')
     angles = list(angles.values())
     angles = torch.FloatTensor(np.asarray(angles).reshape(-1, 1))
+
+    lengths = nx.get_node_attributes(nxg, 'length')
+    lengths = list(lengths.values())
+    lengths = torch.FloatTensor(np.asarray(lengths).reshape(-1, 1))
 
     # % DeepWalk
     #dpwlk = DeepWalk(number_walks=4, walk_length=5, representation_size=2)
@@ -250,7 +267,7 @@ def chris_get_features(nxg):
 
     # % Combine all features into one tensor
     #features = torch.cat((norm_positions, norm_deg, norm_ids, embedding_feat), 1)
-    features = torch.cat((norm_degrees, norm_identity, angles), 1)
+    features = torch.cat((norm_degrees, norm_ids, angles, lengths), 1)
 
     return features
 
