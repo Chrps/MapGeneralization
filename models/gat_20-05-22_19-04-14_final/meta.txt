@@ -1,0 +1,8 @@
+2020-05-22 22:30:46.870444
+Total Training Time: 3:26:32.562633
+Model Type: gat
+Model Config: [12, 10, [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1], <function elu at 0x000001E59BF65268>, 0.0, 0.0, 0.2, True] lr: 0.001 weight decay: 0.0005
+Number of Features: 3
+Number of Classes: 2
+Saved at Epoch: 955
+Accuracy: 0.96
