@@ -1,5 +1,5 @@
 # MapGeneralization
-Generalizing Doors in TechnicalDrawings using Graph Neutral Networks
+Generalizing Doors in Technical Drawings using Graph Neutral Networks
 
 ## Pipeline
 **DXF -> Line data -> Graph:** Use DxfReader.extract_data() to create line data and DxfReader.convert_data_to_graph() to convert it to a graph - see main.py  
