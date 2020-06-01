@@ -8,7 +8,7 @@ import src.models as models
 parser = argparse.ArgumentParser()
 parser.add_argument('--evaluate-path1', type=str, default='data/test_file_list.txt')
 parser.add_argument('--evaluate-path2', type=str, default='data/generalizing_test_file_list.txt')
-parser.add_argument('--model-path', type=str, default='models/gat_20-04-27_09-28-16')
+parser.add_argument('--model-path', type=str, default='models/gat_20-05-15_15-04-29')
 args = parser.parse_args()
 
 
@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     print(evaluate_path1)
     graphs, labels, features = graph_utils.batch_graphs(evaluate_path1,
-                                                        r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\graph_annotations")
+                                                        r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_annotations")
     overall_acc, class0_acc, class1_acc = evaluate(model, graphs, features, labels)
     print('Overall Accuracy: %.2f' % overall_acc)
     print('Door Accuracy: %.2f' % class1_acc)
@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     print(evaluate_path2)
     graphs, labels, features = graph_utils.batch_graphs(evaluate_path2,
-                                                        r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\graph_annotations")
+                                                        r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_annotations")
     overall_acc, class0_acc, class1_acc = evaluate(model, graphs, features, labels)
     print('Overall Accuracy: %.2f' % overall_acc)
     print('Door Accuracy: %.2f' % class1_acc)

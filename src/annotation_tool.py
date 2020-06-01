@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import os
 
-GRAPH_PATH = "../data/graphs/MSP1-HoM-MA-XX+5-ET_cloudconvert.gpickle"
+GRAPH_PATH = r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_annotations\Canterbury\M S1 Becket First Floor_w_annotations.gpickle"
 
 class SelectFromCollection(object):
     def __init__(self, ax, collection, alpha_other=0.3):
@@ -47,7 +47,11 @@ if __name__ == '__main__':
     G = nx.read_gpickle(GRAPH_PATH)
     graph_data = nx.get_node_attributes(G, 'pos')
     data = np.array(tuple(graph_data.values()))
-    labels = np.zeros(len(data))
+    try:
+        labels = nx.get_node_attributes(G, 'label')
+        labels = np.array(list(labels.values()))
+    except:
+        labels = np.zeros(len(data))
     instances = np.zeros(len(data))
     edgelist = list(G.edges())
     edge_pos = np.asarray([(graph_data[e[0]], graph_data[e[1]]) for e in edgelist])
@@ -57,7 +61,7 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots()
 
-    pts = ax.scatter(data[:, 0], data[:, 1], s=80, c = 'b')
+    pts = ax.scatter(data[:, 0], data[:, 1], s=80, c = labels)
     ax.add_collection(edge_collection)
     selector = SelectFromCollection(ax, pts)
     fc = pts.get_facecolors()
@@ -86,11 +90,11 @@ if __name__ == '__main__':
         if event.key == "b":
             file_name = os.path.basename(GRAPH_PATH)
             file_name = os.path.splitext(file_name)[0]
-            np.save('../data/graph_annotations/' + file_name + '.npy', labels)
+            np.save('C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/scaled_graph_reannotated/Canterbury/' + file_name + '.npy', labels)
             nx.set_node_attributes(G, labels, 'label')
             for node in G.nodes:
                 G.nodes[node]['label'] = labels[node]
-            nx.write_gpickle(G, '../data/graph_annotations/' + file_name + '_w_annotations.gpickle')
+            nx.write_gpickle(G, 'C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/scaled_graph_reannotated/Canterbury/' + file_name + '_w_annotations.gpickle')
 
         if event.key == "enter":
             #print(mode)

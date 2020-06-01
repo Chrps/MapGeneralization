@@ -37,9 +37,12 @@ def calculate_angles_and_length(nxg):
         norm_angle = norm_ang(angleInDegrees)
         nxg.edges[edge]['angle'] = norm_angle
 
-        length = np.sqrt((pos2[0]-pos1[0])**2 + (pos2[1]-pos1[1])**2)
-        norm_length = 1/length
-        nxg.edges[edge]['length'] = norm_length
+        length = np.sqrt((pos2[0] - pos1[0]) ** 2 + (pos2[1] - pos1[1]) ** 2)
+        if length == 0:
+            nxg.edges[edge]['length'] = 0
+        else:
+            norm_length = 1/length
+            nxg.edges[edge]['length'] = norm_length
 
     # Calculate mean angle for all edges going to node.
     for node in nxg.nodes:
@@ -124,7 +127,6 @@ def batch_graphs(data_list, folder, windowing=False):
 
             dgl_g = DGLGraph()
             dgl_g.from_networkx(nxg)
-            #dgl_g.from_networkx(nxg, edge_attrs=['length'])
             dgl_g.readonly()
 
             # Append the information for batching
@@ -160,7 +162,6 @@ def convert_gpickle_to_dgl_graph(file):
     # Define DGL graph from netx graph
     dgl_g = DGLGraph()
     dgl_g.from_networkx(nxg)
-    #dgl_g.from_networkx(nxg, edge_attrs=['length'])
     dgl_g.readonly()
 
     return dgl_g
@@ -267,7 +268,7 @@ def chris_get_features(nxg):
 
     # % Combine all features into one tensor
     #features = torch.cat((norm_positions, norm_deg, norm_ids, embedding_feat), 1)
-    features = torch.cat((norm_degrees, norm_ids, angles, lengths), 1)
+    features = torch.cat((norm_degrees, angles, lengths), 1)
 
     return features
 

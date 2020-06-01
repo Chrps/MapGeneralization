@@ -45,9 +45,6 @@ Canterbury/M S1 Coleridge Second Floor_w_annotations.gpickle
 Canterbury/M S1 Erasmus Ground Floor_w_annotations.gpickle
 Canterbury/M S1 Fisher Fifth Floor_w_annotations.gpickle
 Canterbury/M S1 Fleming Ground Floor_sub_w_annotations.gpickle
-Canterbury/M S1 Hepworth Ground Floor_w_annotations.gpickle
-Canterbury/M S1 Hepworth Second Floor_w_annotations.gpickle
-Canterbury/M S1 Hepworth Third Floor_w_annotations.gpickle
 Canterbury/M S1 Invicta First Floor_w_annotations.gpickle
 Canterbury/M S1 Invicta Ground Floor_w_annotations.gpickle
 Canterbury/M S1 Johnson First Floor_w_annotations.gpickle
@@ -58,4 +55,4 @@ Canterbury/M S1 Moore Ground Floor_w_annotations.gpickle
 Canterbury/M S1 Newton First Floor_w_annotations.gpickle
 Kohls/Bldg1_Level1_w_annotations.gpickle
 Kohls/NY Design Studio 18TH_FLOOR_PLAN 10-26-16_w_annotations.gpickle
-Musikkenshus/MSP1-HoM-MA-XX+4-ET_id_test_sub_w_annotations.gpickle
+Musikkenshus/MSP1-HoM-MA-XX+4-ET_w_annotations.gpickle

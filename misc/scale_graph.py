@@ -9,8 +9,8 @@ from math import sqrt
 matplotlib.use('TKAgg')
 import os
 
-GRAPH_TO_SCALE_PATH = r"D:\University Stuff\OneDrive - Aalborg Universitet\P10 - Master's Thesis\data\graph_annotations\AU\A1322PE-0_w_annotations.gpickle"
-OUTPUT_FOLDER = r"D:\University Stuff\OneDrive - Aalborg Universitet\P10 - Master's Thesis\data\scaled_graph_annotations\AU"
+GRAPH_TO_SCALE_PATH = r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\graph_annotations\RTX\512D_w_annotations.gpickle"
+OUTPUT_FOLDER = r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_annotations\RTX"
 
 def refreshGraph(graph, node_color, fig):
     print("here")
@@ -108,7 +108,7 @@ copy_graph = nxg.copy()
 
 for i in range(copy_graph.number_of_nodes()):
     orig_pos = (copy_graph.nodes[i]['pos'])
-    new_pos = ((orig_pos[0] + x_origin)/SCALE_FACTOR, (orig_pos[1] + y_origin)/SCALE_FACTOR)
+    new_pos = ((orig_pos[0] + x_origin) * SCALE_FACTOR, (orig_pos[1] + y_origin) * SCALE_FACTOR)
     copy_graph.nodes[i]['pos'] = new_pos
 
 # Plot the new scaled graph to double check

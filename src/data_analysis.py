@@ -7,8 +7,8 @@ def get_labels(nxg_):
     label_dict = nx.get_node_attributes(nxg_, 'label')
     return list(label_dict.values())
 
-folder = r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\graph_annotations'
-data_list = '../data/valid_file_list_Canterbury_and_AU.txt'
+folder = r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_reannotated'
+data_list = '../data/generalizing_test_file_list_new.txt'
 data_files = [os.path.join(folder, line.rstrip()) for line in open(data_list)]
 
 nr_nodes_list = []

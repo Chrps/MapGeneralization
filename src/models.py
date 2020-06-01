@@ -263,7 +263,7 @@ class GIN(nn.Module):
         self.layers.append(
             GINConv(
                 nn.Sequential(
-                    nn.Dropout(0.6),
+                    nn.Dropout(0.0),
                     nn.Linear(in_feats, n_hidden),
                     nn.ReLU(),
                 ),
@@ -276,7 +276,7 @@ class GIN(nn.Module):
             self.layers.append(
                 GINConv(
                     nn.Sequential(
-                        nn.Dropout(0.6),
+                        nn.Dropout(0.0),
                         nn.Linear(n_hidden, n_hidden),
                         nn.ReLU()
                     ),
@@ -288,7 +288,7 @@ class GIN(nn.Module):
         self.layers.append(
             GINConv(
                 nn.Sequential(
-                    nn.Dropout(0.6),
+                    nn.Dropout(0.0),
                     nn.Linear(n_hidden, n_classes),
                 ),
                 'mean',
