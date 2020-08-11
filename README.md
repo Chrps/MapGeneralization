@@ -17,13 +17,11 @@ This repository contains the code & links to annotation data for our WACV 2021 p
 
 sudo apt-get install python3-tk
 
-Our code has been tested using torch==1.5.1 & pytorch-lightning==0.8.3 on an Nvidia 2060 GPU machine with CUDA 10.0 installed.
+Our code has been tested using torch==1.5.1 & pytorch-lightning==0.8.3 on a Threadripper 2950x and Nvidia 2060 GPU machine with CUDA 10.0 installed.
 
 ## Data
 
-Our pubic dataset will be available [here](https://vap.aau.dk/). We suggest placing the data in the [data/](data/) directory.
-
-
+Our pubic dataset will be available [here](https://vap.aau.dk/). We suggest unpacking the zip fiels in the [data/](data/) directory. The dataset consists of all of the tools and files shown in Figure 
 
 
 ![dataset_creation_and_content](figs/dataset_creation_and_content.png)
