@@ -59,9 +59,9 @@ def calculate_angles_and_length(nxg):
             nxg.nodes[node]['length'] = length_sum / len(nxg.edges(node))
 
 
-def group_graphs_labels_features(data_list, folder, windowing=False):
-    data_path = 'data/'
-    data_files = [os.path.join(data_path, folder, line.rstrip()) for line in open(data_list)]
+def group_graphs_labels_features(data_list, windowing=False):
+    #data_path = 'data/'
+    data_files = [line.rstrip() for line in open(data_list)]
 
     # Initialize empty list
     dataset = []
@@ -70,11 +70,12 @@ def group_graphs_labels_features(data_list, folder, windowing=False):
         graph = []
         nxg = nx.read_gpickle(file)
 
-
         # Get the annotated labels
         labels = get_labels(nxg)
+        print(labels)
         # Get the feature from the file
         features = chris_get_features(nxg)
+        print(features)
 
         dgl_g = DGLGraph()
         dgl_g.from_networkx(nxg)
@@ -89,10 +90,8 @@ def group_graphs_labels_features(data_list, folder, windowing=False):
     return dataset
 
 
-
-def batch_graphs(data_list, folder, windowing=False):
-    data_path = 'data/'
-    data_files = [os.path.join(data_path, folder, line.rstrip()) for line in open(data_list)]
+def batch_graphs(data_list, windowing=False):
+    data_files = [line.rstrip() for line in open(data_list)]
 
     all_graphs = []
     all_labels = []

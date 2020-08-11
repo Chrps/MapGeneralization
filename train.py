@@ -15,8 +15,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--desired_net', type=str, default='agnn')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, chebnet
 parser.add_argument('--num-epochs', type=int, default=1000)
 parser.add_argument('--batch-size', type=int, default=5)
-parser.add_argument('--train-path', type=str, default='data/train_file_list_new.txt')
-parser.add_argument('--valid-path', type=str, default='data/valid_file_list_new.txt')
+parser.add_argument('--train-list', type=str, default='data/public_train.txt')
+parser.add_argument('--valid-list', type=str, default='data/public_val.txt')
 parser.add_argument('--num-classes', type=int, default=2)
 parser.add_argument('--windowing', type=str, default=False)
 args = parser.parse_args()
@@ -146,15 +146,15 @@ def collate(samples):
     return batched_graph, batched_labels, batched_features
 
 
-def train(desired_net, num_epochs, train_path, valid_path, num_classes, windowing, batch_size):
+def train(desired_net, num_epochs, train_list, valid_list, num_classes, windowing, batch_size):
 
     # Retrieve dataset and prepare it for DataLoader
-    trainset = graph_utils.group_graphs_labels_features(train_path, r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_reannotated", windowing=windowing)
+    trainset = graph_utils.group_graphs_labels_features(train_list, windowing=windowing)
     data_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True,
                              collate_fn=collate)
 
     # Load the validation data
-    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(valid_path, r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_reannotated", windowing=windowing)
+    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(valid_list, windowing=windowing)
 
     # create user specified model
     n_features = trainset[0][2].shape[1]  # number of features is same throughout, so just get shape of first graph
@@ -213,6 +213,7 @@ def train(desired_net, num_epochs, train_path, valid_path, num_classes, windowin
                 save_model(model, epoch, desired_net, n_features, num_classes, start_date, overall_acc)
             print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Overall Acc {:.4f} |"
                   "Pr. Epoch Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
+
         overall_acc_list.append(overall_acc)
         non_door_acc_list.append(non_door_acc)
         door_acc_list.append(door_acc)
@@ -223,9 +224,9 @@ if __name__ == '__main__':
     desired_net = args.desired_net
     num_epochs = args.num_epochs
     batch_size = args.batch_size
-    train_path = args.train_path
-    valid_path = args.valid_path
+    train_list = args.train_list
+    valid_list = args.valid_list
     num_classes = args.num_classes
     windowing = args.windowing
 
-    train(desired_net, num_epochs, train_path, valid_path, num_classes, windowing, batch_size)
+    train(desired_net, num_epochs, train_list, valid_list, num_classes, windowing, batch_size)

@@ -1,15 +1,46 @@
 from src.dxf_utils import DxfReader
 
-def main():
-    file_path = r"D:\University Stuff\OneDrive - Aalborg Universitet\P10 - Master's Thesis\data\MapsPeople-dxf\AU\N¥1\1320\L1320_H1_EK_K13.03_B07.01_N01_ZEtage_K.dxf"
-    out_folder = r"D:\University Stuff\OneDrive - Aalborg Universitet\P10 - Master's Thesis\data\graphs\AU"
+import os
+import argparse
 
-    dxf_obj = DxfReader(dxf_file_path=file_path)
+
+def dxf2graph(dxf_path, graph_dir):
+
+    dxf_obj = DxfReader(dxf_file_path=dxf_path)
     dxf_obj.extract_data()
-    dxf_obj.convert_data_to_graph(out_folder, visualize=True)
+    dxf_obj.convert_data_to_graph(graph_dir, visualize=True)
     print("done")
     #dxf_obj.load_graph("data/graphs/test_graph.gpickle")
 
 
 if __name__ == "__main__":
-    main()
+    """
+    Convert dxf files.
+
+    Command:
+        python main.py
+    """
+
+    # construct the argument parser and parse the arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-d", "--dxf", type=str,
+                    default='data/dxf_files', help="directory with dxf files")
+
+    args = vars(ap.parse_args())
+
+    # make sure output dir exists
+    graph_dir = args['dxf'].replace(args['dxf'].split('/')[-1],'graphs')
+    if not os.path.exists(graph_dir):
+        os.makedirs(graph_dir)
+        print("created new dir {} for saving graphs".format(graph_dir))
+    else:
+        print("saving graphs to {}".format(graph_dir))
+
+    dxf_files = sorted([os.path.join(args['dxf'],f) for f in os.listdir(args['dxf']) if 'dxf' in f])
+
+    for dxf_path in dxf_files[:]:
+        print(dxf_path)
+        filename = os.path.basename(dxf_path)
+        graph_path = os.path.join(graph_dir,filename.replace('dxf','gpickle'))
+
+        dxf2graph(dxf_path, graph_dir)
