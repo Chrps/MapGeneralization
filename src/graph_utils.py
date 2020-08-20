@@ -1,7 +1,6 @@
 import os
 import networkx as nx
 import dgl
-from dgl import DGLGraph
 import torch
 import numpy as np
 from src.deepwalk.deepwalk import DeepWalk
@@ -66,20 +65,17 @@ def group_graphs_labels_features(data_list, windowing=False):
     # Initialize empty list
     dataset = []
 
+    print("loading {} files".format(len(data_files)))
     for idx, file in enumerate(data_files):
         graph = []
         nxg = nx.read_gpickle(file)
 
         # Get the annotated labels
         labels = get_labels(nxg)
-        print(labels)
         # Get the feature from the file
         features = chris_get_features(nxg)
-        print(features)
 
-        dgl_g = DGLGraph()
-        dgl_g.from_networkx(nxg)
-        dgl_g.readonly()
+        dgl_g  = dgl.from_networkx(nxg)
 
         # Append the information for batching
         graph.append(dgl_g)
@@ -110,9 +106,7 @@ def batch_graphs(data_list, windowing=False):
                 # Get the feature from the file
                 features = chris_get_features(nxg)
 
-                dgl_g = DGLGraph()
-                dgl_g.from_networkx(nxg)
-                dgl_g.readonly()
+                dgl_g  = dgl.from_networkx(nxg)
 
                 # Append the information for batching
                 all_graphs.append(dgl_g)
@@ -124,9 +118,7 @@ def batch_graphs(data_list, windowing=False):
             # Get the feature from the file
             features = chris_get_features(nxg)
 
-            dgl_g = DGLGraph()
-            dgl_g.from_networkx(nxg)
-            dgl_g.readonly()
+            dgl_g  = dgl.from_networkx(nxg)
 
             # Append the information for batching
             all_graphs.append(dgl_g)
@@ -159,9 +151,7 @@ def get_labels(nxg):
 def convert_gpickle_to_dgl_graph(file):
     nxg = nx.read_gpickle(file)
     # Define DGL graph from netx graph
-    dgl_g = DGLGraph()
-    dgl_g.from_networkx(nxg)
-    dgl_g.readonly()
+    dgl_g  = dgl.from_networkx(nxg)
 
     return dgl_g
 
@@ -226,9 +216,7 @@ def chris_get_features(nxg):
     norm_positions = torch.FloatTensor(norm_positions)
 
     # % Normalized node degree (number of edges connected to node)
-    dgl_g = DGLGraph()
-    dgl_g.from_networkx(nxg)
-    dgl_g.readonly()
+    dgl_g  = dgl.from_networkx(nxg)
     norm_degrees = 1. / dgl_g.in_degrees().float().unsqueeze(1)
 
     # % Normalized unique identity (entity type [ARC/CRCLE/LINE])

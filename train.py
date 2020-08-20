@@ -12,9 +12,9 @@ import time
 from sklearn.metrics import balanced_accuracy_score
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--desired_net', type=str, default='agnn')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, chebnet
+parser.add_argument('--desired_net', type=str, default='gcn')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, chebnet
 parser.add_argument('--num-epochs', type=int, default=1000)
-parser.add_argument('--batch-size', type=int, default=5)
+parser.add_argument('--batch-size', type=int, default=7)
 parser.add_argument('--train-list', type=str, default='data/public_train.txt')
 parser.add_argument('--valid-list', type=str, default='data/public_val.txt')
 parser.add_argument('--num-classes', type=int, default=2)
@@ -151,7 +151,8 @@ def train(desired_net, num_epochs, train_list, valid_list, num_classes, windowin
     # Retrieve dataset and prepare it for DataLoader
     trainset = graph_utils.group_graphs_labels_features(train_list, windowing=windowing)
     data_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True,
-                             collate_fn=collate)
+                             num_workers=0, collate_fn=collate)
+    print("data_loader is producing {} bathces with size {}".format(len(data_loader),batch_size))
 
     # Load the validation data
     valid_g, valid_labels, valid_features = graph_utils.batch_graphs(valid_list, windowing=windowing)
@@ -162,7 +163,7 @@ def train(desired_net, num_epochs, train_list, valid_list, num_classes, windowin
     model = net(n_features,
                 num_classes,
                 *config['extra_args'])
-    print(model)
+    #print(model)
 
     # Define optimizer
     optimizer = torch.optim.Adam(model.parameters(),

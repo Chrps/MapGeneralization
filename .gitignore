@@ -124,4 +124,7 @@ venv.bak/
 
 # text
 *.txt
-!requirements.txt
+
+# training logs
+
+lightning_logs
