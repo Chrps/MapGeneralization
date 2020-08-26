@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import os
 
-GRAPH_PATH = r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_annotations\Canterbury\M S1 Becket First Floor_w_annotations.gpickle"
+GRAPH_PATH = r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper\Public\AU\anno\off_1\A1322PE-0_w_annotations.gpickle"
 
 class SelectFromCollection(object):
     def __init__(self, ax, collection, alpha_other=0.3):
@@ -90,11 +90,11 @@ if __name__ == '__main__':
         if event.key == "b":
             file_name = os.path.basename(GRAPH_PATH)
             file_name = os.path.splitext(file_name)[0]
-            np.save('C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/scaled_graph_reannotated/Canterbury/' + file_name + '.npy', labels)
+            #np.save('C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/scaled_graph_reannotated/Canterbury/' + file_name + '.npy', labels)
             nx.set_node_attributes(G, labels, 'label')
             for node in G.nodes:
                 G.nodes[node]['label'] = labels[node]
-            nx.write_gpickle(G, 'C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/scaled_graph_reannotated/Canterbury/' + file_name + '_w_annotations.gpickle')
+            nx.write_gpickle(G, r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper\Public\AU\anno\A1322PE-0_w_annotations.gpickle')
 
         if event.key == "enter":
             #print(mode)

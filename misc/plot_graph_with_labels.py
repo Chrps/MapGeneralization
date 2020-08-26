@@ -8,10 +8,12 @@ import matplotlib
 matplotlib.use('TKAgg')
 import os
 
-GRAPH_PATH = r"D:\University Stuff\OneDrive - Aalborg Universitet\P10 - Master's Thesis\data\graph_annotations\AU\A1322PE-0_w_annotations.gpickle"
+GRAPH_PATH = r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper\Public\Musikkenshus\anno\MSP1-HoM-MA-XX+4-ET_w_annotations.gpickle"
 nxg = nx.read_gpickle(GRAPH_PATH)
 label_dict = nx.get_node_attributes(nxg, 'label')
 labels = list(label_dict.values())
+
+print(nxg.number_of_nodes())
 
 # create empty list for node colors
 node_color = []

@@ -48,15 +48,42 @@ def calculate_angles_and_length(nxg):
     for node in nxg.nodes:
         angle_sum = 0
         length_sum = 0
-        for edge in nxg.edges(node):
+        angle_max = 0
+        angle_min = 0
+        length_max = 0
+        length_min = 0
+        for edge_idx, edge in enumerate(nxg.edges(node)):
+            if edge_idx == 0:
+                angle_max = nxg.edges[edge]['angle']
+                angle_min = nxg.edges[edge]['angle']
+                length_max = nxg.edges[edge]['length']
+                length_min = nxg.edges[edge]['length']
+            else:
+                if nxg.edges[edge]['angle'] > angle_max:
+                    angle_max = nxg.edges[edge]['angle']
+                if nxg.edges[edge]['angle'] < angle_min:
+                    angle_min = nxg.edges[edge]['angle']
+                if nxg.edges[edge]['length'] > length_max:
+                    length_max = nxg.edges[edge]['length']
+                if nxg.edges[edge]['length'] < length_min:
+                    length_min = nxg.edges[edge]['length']
+
             angle_sum += nxg.edges[edge]['angle']
             length_sum += nxg.edges[edge]['length']
         if len(nxg.edges(node)) == 0:
             nxg.nodes[node]['angle'] = 0
             nxg.nodes[node]['length'] = 0
+            nxg.nodes[node]['max_angle'] = 0
+            nxg.nodes[node]['min_angle'] = 0
+            nxg.nodes[node]['max_length'] = 0
+            nxg.nodes[node]['min_length'] = 0
         else:
             nxg.nodes[node]['angle'] = angle_sum / len(nxg.edges(node))
             nxg.nodes[node]['length'] = length_sum / len(nxg.edges(node))
+            nxg.nodes[node]['max_angle'] = angle_max
+            nxg.nodes[node]['min_angle'] = angle_min
+            nxg.nodes[node]['max_length'] = length_max
+            nxg.nodes[node]['min_length'] = length_min
 
 
 def group_graphs_labels_features(data_list, folder, windowing=False):
@@ -259,6 +286,22 @@ def chris_get_features(nxg):
     lengths = list(lengths.values())
     lengths = torch.FloatTensor(np.asarray(lengths).reshape(-1, 1))
 
+    max_angle = nx.get_node_attributes(nxg, 'max_angle')
+    max_angle = list(max_angle.values())
+    max_angle = torch.FloatTensor(np.asarray(max_angle).reshape(-1, 1))
+
+    min_angle = nx.get_node_attributes(nxg, 'min_angle')
+    min_angle = list(min_angle.values())
+    min_angle = torch.FloatTensor(np.asarray(min_angle).reshape(-1, 1))
+
+    max_length = nx.get_node_attributes(nxg, 'max_length')
+    max_length = list(max_length.values())
+    max_length = torch.FloatTensor(np.asarray(max_length).reshape(-1, 1))
+
+    min_length = nx.get_node_attributes(nxg, 'min_length')
+    min_length = list(min_length.values())
+    min_length = torch.FloatTensor(np.asarray(min_length).reshape(-1, 1))
+
     # % DeepWalk
     #dpwlk = DeepWalk(number_walks=4, walk_length=5, representation_size=2)
     # Create embedding file for given file
@@ -268,7 +311,8 @@ def chris_get_features(nxg):
 
     # % Combine all features into one tensor
     #features = torch.cat((norm_positions, norm_deg, norm_ids, embedding_feat), 1)
-    features = torch.cat((norm_degrees, angles, lengths), 1)
+    features = torch.cat((norm_degrees, max_angle, min_angle, max_length, min_length), 1)
+    #features = torch.cat((norm_degrees, angles, lengths), 1)
 
     return features
 

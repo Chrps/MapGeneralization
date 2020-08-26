@@ -11,8 +11,9 @@ from itertools import count
 from sklearn.cluster import DBSCAN
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--predict-path', type=str, default='data/test_file_list.txt')
-parser.add_argument('--model_name', type=str, default='gat_20-05-22_19-04-14_final')
+parser.add_argument('--data-path', type=str, default=r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper')
+parser.add_argument('--predict-path', type=str, default='test_list.txt')
+parser.add_argument('--model_name', type=str, default='gat_20-06-10_14-37-22_beast')
 
 args = parser.parse_args()
 
@@ -285,6 +286,19 @@ def generalize_doors_new(disjoint_sub_graphs):
             y2 = rot_pos_2[1]
             dx = x2 - x1
             dy = y2 - y1
+
+        dx_1 = x2 - x1
+        dy_1 = y2 - y1
+        regular_vec1 = normalize([dx_1, dy_1]) * 100
+        x1 = x1 - regular_vec1[0]
+        y1 = y1 - regular_vec1[1]
+
+        dx_2 = x1 - x2
+        dy_2 = y1 - y2
+        regular_vec2 = normalize([dx_2, dy_2]) * 100
+        x2 = x2 - regular_vec2[0]
+        y2 = y2 - regular_vec2[1]
+
         norm1 = [-dy, dx]
         norm2 = [dy, -dx]
         mag1 = math.sqrt(norm1[0]**2 + norm1[1]**2)
@@ -372,6 +386,7 @@ def generalize_doors(disjoint_sub_graphs):
             x2 = orig_pos_2[0]
             y2 = orig_pos_2[1]
 
+
             norm_perp_1 = perpendicular(normalize([x1, y1]))
             norm_perp_2 = perpendicular(normalize([x2, y2]))
             gen_door_graph.add_node(0, pos=norm_perp_1)
@@ -387,7 +402,7 @@ def generalize_doors(disjoint_sub_graphs):
     return list_gen_door_graphs
 
 
-def predict(predict_path, model_name):
+def predict(data_path, predict_path, model_name):
     # Read the parameters of the trained model
     net, n_features, n_classes = load_model_txt(model_name)
 
@@ -401,8 +416,7 @@ def predict(predict_path, model_name):
     print(model)
 
     # Get the list of files for prediction
-    data_path = r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_reannotated"
-    pred_files = [os.path.join(data_path, line.rstrip()) for line in open(predict_path)]
+    pred_files = [os.path.join(data_path, line.rstrip()) for line in open(os.path.join(data_path, predict_path))]
     for file in pred_files:
         # Convert the gpickle file to a dgl graph
         dgl_g = graph_utils.convert_gpickle_to_dgl_graph(file)
@@ -429,20 +443,20 @@ def predict(predict_path, model_name):
         draw(inst_predictions, ax, nxg, positions)'''
 
         # Plot graph with predictions
-        '''fig1 = plt.figure(dpi=150)
+        fig1 = plt.figure(dpi=150)
         fig1.clf()
         ax = fig1.subplots()
-        draw(predictions, ax, nxg, positions)'''
+        draw(predictions, ax, nxg, positions)
 
         # Get labels
         labels = nx.get_node_attributes(nxg, 'label')
         labels = np.array(list(labels.values()))
 
         # Plot annotated graph
-        fig2 = plt.figure(dpi=150)
+        '''fig2 = plt.figure(dpi=150)
         fig2.clf()
         ax = fig2.subplots()
-        draw(labels, ax, nxg, positions)
+        draw(labels, ax, nxg, positions)'''
 
         # Perform graph morphology closing
         predictions_alt = predictions
@@ -526,24 +540,53 @@ def predict(predict_path, model_name):
         ax = fig5.subplots()
         nx.draw(nondoor_graph, pos, with_labels=False, node_size=10, ax=ax, node_color='b')
 
-        for g in list_gen_doors:
+        door_generalized_graph = nx.Graph()
+        nondoor_graph = nx.convert_node_labels_to_integers(nondoor_graph)
+        door_generalized_graph = nx.compose(door_generalized_graph, nondoor_graph)
+        door_graph = nx.Graph()
+        for g_idx, g in enumerate(list_gen_doors):
             gen_pos = nx.get_node_attributes(g, 'pos')
             nx.draw(g, gen_pos, with_labels=False, node_color='g', node_size=30, ax=ax)
             nx.draw_networkx_edges(g, gen_pos, width=2, alpha=0.8, edge_color='g')
+            g = nx.convert_node_labels_to_integers(g, first_label=4*g_idx)
+            door_graph = nx.compose(door_graph, g)
+        door_graph = nx.convert_node_labels_to_integers(door_graph, first_label=door_generalized_graph.number_of_nodes())
+        door_generalized_graph = nx.compose(door_generalized_graph, door_graph)
+
+        fig6 = plt.figure(dpi=150)
+        fig6.clf()
+        ax = fig6.subplots()
+        door_generalized_graph_pos = nx.get_node_attributes(door_generalized_graph, 'pos')
+        nx.draw(door_generalized_graph, door_generalized_graph_pos, with_labels=False, node_size=10, ax=ax, node_color='r')
+
+        #door_graph = nx.convert_node_labels_to_integers(door_graph)
+        fig7 = plt.figure(dpi=150)
+        fig7.clf()
+        ax = fig7.subplots()
+        door_graph_pos = nx.get_node_attributes(door_graph, 'pos')
+        nx.draw(door_graph, door_graph_pos, with_labels=False, node_size=10, ax=ax,
+                node_color='g')
+
+        # Save res graph
+        base = os.path.basename(file)
+        file_name = os.path.splitext(base)[0]
+        #nx.write_gpickle(door_graph, 'C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/door_graphs/' + file_name + '_door_graph.gpickle')
+        #nx.write_gpickle(door_generalized_graph, 'C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/door_generalized_graphs/' + file_name + '_door_generalized_graph.gpickle')
 
         # Plot graph with instances
-        '''fig4 = plt.figure(dpi=150)
+        fig4 = plt.figure(dpi=150)
         fig4.clf()
         ax = fig4.subplots()
         #ax.axis('equal')
-        draw_inst(seleted_graphs_joined, ax, positions)'''
+        draw_inst(seleted_graphs_joined, ax, positions)
 
         plt.show()
 
 
 if __name__ == '__main__':
+    data_path = args.data_path
     predict_path = args.predict_path
     model_name = args.model_name
 
-    predict(predict_path, model_name)
+    predict(data_path, predict_path, model_name)
 

@@ -5,11 +5,10 @@ import matplotlib.pyplot as plt
 import os
 import networkx as nx
 import argparse
+import math
 import numpy as np
 from itertools import count
-from sklearn.cluster import DBSCAN, SpectralClustering, ward_tree
-from scipy.spatial import ConvexHull, convex_hull_plot_2d
-from matplotlib.pyplot import cm
+from sklearn.cluster import DBSCAN
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data-path', type=str, default=r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper')
@@ -17,6 +16,7 @@ parser.add_argument('--predict-path', type=str, default='test_list.txt')
 parser.add_argument('--model_name', type=str, default='gat_20-06-10_14-37-22_beast')
 
 args = parser.parse_args()
+
 
 def load_model_txt(model_name):
     model_txt = 'models/' + model_name + '/predict_info.txt'
@@ -33,6 +33,7 @@ def load_model_txt(model_name):
 
     return net, n_features, n_classes
 
+
 def draw(results, ax, nx_G, positions):
     cls1color = 'r'
     cls2color = 'b'
@@ -44,9 +45,8 @@ def draw(results, ax, nx_G, positions):
     ax.cla()
     ax.axis('off')
     nx.draw_networkx(nx_G.to_undirected(), positions, node_color=colors,
-            with_labels=False, node_size=5, ax=ax)
-    #id_dict = {i: i for i in range(0, len(results))}
-    #nx.draw_networkx_labels(nx_G, positions, id_dict)
+            with_labels=False, node_size=10, ax=ax)
+
 
 def draw_inst(nx_G, ax, positions):
 
@@ -55,21 +55,10 @@ def draw_inst(nx_G, ax, positions):
     nodes = nx_G.nodes()
     colors = [mapping[nx_G.nodes[n]['instance']] for n in nodes]
 
-    ax.cla()
     ax.axis('off')
     nx.draw_networkx(nx_G.to_undirected(), positions, node_color=colors,
-                     with_labels=False, node_size=5, ax=ax, cmap=plt.cm.jet)
+                     with_labels=False, node_size=10, ax=ax, cmap=plt.cm.jet)
 
-def draw_DBSCAN_inst(nx_G, ax, positions, instances):
-    groups = set(nx.get_node_attributes(nx_G, 'instance').values())
-    mapping = dict(zip(sorted(groups), count()))
-    nodes = nx_G.nodes()
-    colors = instances
-
-    ax.cla()
-    ax.axis('off')
-    nx.draw_networkx(nx_G.to_undirected(), positions, node_color=colors,
-                     with_labels=False, node_size=5, ax=ax, cmap=plt.cm.jet)
 
 
 def post_processing(nxg_, predictions_):
@@ -118,21 +107,18 @@ def instancing(nxg_, predictions, instance=1):
     return sub_nxg
 
 
-def reject_outliers(dataIn,lower_factor=2.0, higher_factor=2.0):
+def reject_outliers_IQR(dataIn, lower_factor=2.0, higher_factor=6.0):
     q25, q75 = np.percentile(dataIn, 25), np.percentile(dataIn, 75)
     iqr = q75 - q25
-    #iqrSigma = iqr/1.34896
-    #medData = np.median(dataIn)
-    cut_off_upper = iqr * 6
-    cut_off_lower = iqr * 2
+    cut_off_upper = iqr * higher_factor
+    cut_off_lower = iqr * lower_factor
     lower, upper = q25 - cut_off_lower, q75 + cut_off_upper
     inliers = []
     for idx, data in enumerate(dataIn):
-        '''if (data > medData - lower_factor* iqrSigma) and (data < medData + higher_factor* iqrSigma):
-            inliers.append(idx)'''
         if (data > lower) and (data < upper):
             inliers.append(idx)
     return inliers
+
 
 def reject_outliers_hardcoded(areas, lengths, heights, ratios):
     inliers = []
@@ -142,20 +128,6 @@ def reject_outliers_hardcoded(areas, lengths, heights, ratios):
             inliers.append(idx)
     return inliers
 
-def remove_nodes_far_from_center(graph):
-    positions_ = nx.get_node_attributes(graph, 'pos')
-    positions_ = np.array(list(positions_.values()))
-    centroid = positions_.mean(axis=0)
-    nodes_to_keep = []
-    for idx, node in enumerate(graph.nodes()):
-        pos = list(graph._node[node]['pos'])
-        dist = np.sqrt((pos[0] - centroid[0]) ** 2 + (pos[1] - centroid[1]) ** 2)
-        if dist < 1500:
-            nodes_to_keep.append(node)
-        else:
-            print(print(dist))
-    sub_graph = graph.subgraph(nodes_to_keep)
-    return(sub_graph)
 
 def bounding_box_params(points):
     bot_left_x = min(point[0] for point in points)
@@ -172,6 +144,37 @@ def bounding_box_params(points):
     ratio = min_box/max_box
 
     return width * height, height, width, ratio
+
+
+def bounding_box_trbl(points):
+    bot_left_x = min(point[0] for point in points)
+    bot_left_y = min(point[1] for point in points)
+    top_right_x = max(point[0] for point in points)
+    top_right_y = max(point[1] for point in points)
+
+    return [top_right_x, top_right_y, bot_left_x, bot_left_y]
+
+def determine_bboxes(graphs):
+    bboxes = []
+    list_gen_bbox_graphs = []
+    for graph in graphs:
+        tmp_positions = nx.get_node_attributes(graph, 'pos')
+        tmp_positions = np.array(list(tmp_positions.values()))
+        bbox = bounding_box_trbl(tmp_positions)
+        bboxes.append(bbox)
+        pos0 = [bbox[2], bbox[1]] # tl
+        pos1 = [bbox[0], bbox[1]] # tr
+        pos2 = [bbox[0], bbox[3]] # br
+        pos3 = [bbox[2], bbox[3]] # bl
+        gen_door_graph = nx.Graph()
+        gen_door_graph.add_node(0, pos=pos0)
+        gen_door_graph.add_node(1, pos=pos1)
+        gen_door_graph.add_node(2, pos=pos2)
+        gen_door_graph.add_node(3, pos=pos3)
+        gen_door_graph.add_edges_from([(0, 1), (1, 2), (2, 3), (3, 0)])
+        list_gen_bbox_graphs.append(gen_door_graph.copy())
+        gen_door_graph.clear()
+    return bboxes, list_gen_bbox_graphs
 
 
 def predict(data_path, predict_path, model_name):
@@ -202,52 +205,45 @@ def predict(data_path, predict_path, model_name):
             _, predictions = torch.max(logits, dim=1)
             predictions = predictions.numpy()
 
-        # % Plot the predictions
         # Get positions
         nxg = nx.read_gpickle(file)
         positions = nx.get_node_attributes(nxg, 'pos')
         positions = list(positions.values())
+
+        # Plot graph
+        ''''fig2 = plt.figure(dpi=150)
+        fig2.clf()
+        ax = fig2.subplots()
+        inst_predictions = [0] * nxg.number_of_nodes()
+        draw(inst_predictions, ax, nxg, positions)'''
+
+        # Plot graph with predictions
         fig1 = plt.figure(dpi=150)
         fig1.clf()
         ax = fig1.subplots()
         draw(predictions, ax, nxg, positions)
 
+        # Get labels
+        labels = nx.get_node_attributes(nxg, 'label')
+        labels = np.array(list(labels.values()))
+
+        # Plot annotated graph
+        '''fig2 = plt.figure(dpi=150)
+        fig2.clf()
+        ax = fig2.subplots()
+        draw(labels, ax, nxg, positions)'''
 
         # Perform graph morphology closing
         predictions_alt = predictions
-        #predictions_alt = post_processing(nxg, predictions)
-        #predictions_alt = post_processing(nxg, predictions_alt)
+        # predictions_alt = post_processing(nxg, predictions)
 
         # Extract door nodes
         sub_nxg = instancing(nxg, predictions_alt)
-        inst_predictions = [1]*sub_nxg.number_of_nodes()
-
-        fig2 = plt.figure(dpi=150)
-        fig2.clf()
-        ax = fig2.subplots()
-        ax.axis('equal')
-        draw(inst_predictions, ax, sub_nxg, positions)  # draw the results
-
 
         # Separate disjoint graphs (instancing)
         disjoint_sub_graphs = []
         for c in nx.connected_components(sub_nxg):
             disjoint_sub_graphs.append(sub_nxg.subgraph(c))
-
-        disjoint_sub_graphs_joined = nx.Graph()
-
-        for idx, graph in enumerate(disjoint_sub_graphs):
-            # sub_graph = remove_nodes_far_from_center(graph)
-            nx.set_node_attributes(graph, [], 'instance')
-            for node in graph.nodes:
-                graph.nodes[node]['instance'] = idx
-                disjoint_sub_graphs_joined = nx.compose(disjoint_sub_graphs_joined, graph)
-
-        fig7 = plt.figure(dpi=150)
-        fig7.clf()
-        ax = fig7.subplots()
-        ax.axis('equal')
-        draw_inst(disjoint_sub_graphs_joined, ax, positions)
 
         clustered_disjoint_sub_graphs = []
         for graph in disjoint_sub_graphs:
@@ -263,20 +259,6 @@ def predict(data_path, predict_path, model_name):
                         indices.append(graph_keys[idx])
                 sub_graph = graph.subgraph(indices)
                 clustered_disjoint_sub_graphs.append(sub_graph)
-
-        clustered_disjoint_sub_graphs_joined = nx.Graph()
-
-        for idx, graph in enumerate(clustered_disjoint_sub_graphs):
-            # sub_graph = remove_nodes_far_from_center(graph)
-            nx.set_node_attributes(graph, [], 'instance')
-            for node in graph.nodes:
-                graph.nodes[node]['instance'] = idx
-                clustered_disjoint_sub_graphs_joined = nx.compose(clustered_disjoint_sub_graphs_joined, graph)
-        fig8 = plt.figure(dpi=150)
-        fig8.clf()
-        ax = fig8.subplots()
-        ax.axis('equal')
-        draw_inst(clustered_disjoint_sub_graphs_joined, ax, positions)
 
         # Remove graphs not meeting conditions
         min_nr_nodes = 8
@@ -308,26 +290,68 @@ def predict(data_path, predict_path, model_name):
         inliers = reject_outliers_hardcoded(area_list, width_list, height_list, ratio_list)
         selected_graphs = [selected_graphs[i] for i in inliers]
 
-
-
         print('Numer of doors: %d' % len(selected_graphs))
 
         seleted_graphs_joined = nx.Graph()
 
         for idx, graph in enumerate(selected_graphs):
-            #sub_graph = remove_nodes_far_from_center(graph)
             nx.set_node_attributes(graph, [], 'instance')
             for node in graph.nodes:
                 graph.nodes[node]['instance'] = idx
             seleted_graphs_joined = nx.compose(seleted_graphs_joined, graph)
 
+        # Determine bbox
+        list_bboxes, list_gen_bboxes = determine_bboxes(selected_graphs)
+
+        # Plot graph with generalized doors
+        pos = nx.get_node_attributes(nxg, 'pos')
+        fig5 = plt.figure(dpi=150)
+        fig5.clf()
+        ax = fig5.subplots()
+        nx.draw(seleted_graphs_joined, pos, with_labels=False, node_size=10, ax=ax, node_color='b')
+
+        nxg_copy = nxg.copy()
+
+        bbox_and_org_graph = nx.Graph()
+        bbox_and_org_graph = nx.compose(bbox_and_org_graph, nxg_copy)
+        bbox_graph = nx.Graph()
+        for g_idx, g in enumerate(list_gen_bboxes):
+            gen_pos = nx.get_node_attributes(g, 'pos')
+            nx.draw(g, gen_pos, with_labels=False, node_color='g', node_size=30, ax=ax)
+            nx.draw_networkx_edges(g, gen_pos, width=2, alpha=0.8, edge_color='g')
+            g = nx.convert_node_labels_to_integers(g, first_label=4 * g_idx)
+            bbox_graph = nx.compose(bbox_graph, g)
+            bbox_graph = nx.convert_node_labels_to_integers(bbox_graph,
+                                                        first_label=bbox_and_org_graph.number_of_nodes())
+        bbox_and_org_graph = nx.compose(bbox_and_org_graph, bbox_graph)
+
+        fig6 = plt.figure(dpi=150)
+        fig6.clf()
+        ax = fig6.subplots()
+        bbox_and_org_graph_pos = nx.get_node_attributes(bbox_and_org_graph, 'pos')
+        nx.draw(bbox_and_org_graph, bbox_and_org_graph_pos, with_labels=False, node_size=10, ax=ax, node_color='r')
+
+        fig7 = plt.figure(dpi=150)
+        fig7.clf()
+        ax = fig7.subplots()
+        bbox_graph_pos = nx.get_node_attributes(bbox_graph, 'pos')
+        nx.draw(bbox_graph, bbox_graph_pos, with_labels=False, node_size=10, ax=ax,
+                node_color='g')
+
+        # Save res graph
+        base = os.path.basename(file)
+        file_name = os.path.splitext(base)[0]
+        # nx.write_gpickle(door_graph, 'C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/door_graphs/' + file_name + '_door_graph.gpickle')
+        # nx.write_gpickle(door_generalized_graph, 'C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/door_generalized_graphs/' + file_name + '_door_generalized_graph.gpickle')
+
+        # Plot graph with instances
         fig4 = plt.figure(dpi=150)
         fig4.clf()
         ax = fig4.subplots()
-        ax.axis('equal')
+        # ax.axis('equal')
         draw_inst(seleted_graphs_joined, ax, positions)
-        plt.show()
 
+        plt.show()
 
 
 if __name__ == '__main__':

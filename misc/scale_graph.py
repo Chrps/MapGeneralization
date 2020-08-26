@@ -8,9 +8,15 @@ import matplotlib
 from math import sqrt
 matplotlib.use('TKAgg')
 import os
+from os.path import relpath
+import json
 
-GRAPH_TO_SCALE_PATH = r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\graph_annotations\RTX\512D_w_annotations.gpickle"
-OUTPUT_FOLDER = r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_annotations\RTX"
+import glob
+in_folder = r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper\Public\Canterbury\graphs\*.gpickle"
+file_paths = glob.glob(in_folder)
+
+#GRAPH_TO_SCALE_PATH = r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper\Public\AU\graphs\A1322PE-0.gpickle"
+#OUTPUT_FOLDER = r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_annotations\RTX"
 
 def refreshGraph(graph, node_color, fig):
     print("here")
@@ -56,86 +62,106 @@ def onclick(event, graph, node_color, fig):
             refreshGraph(graph, node_color, fig)
             break
     '''
-# Plot Original Graph to Get Scale Factor
-nxg = nx.read_gpickle(GRAPH_TO_SCALE_PATH)
 
-label_dict = nx.get_node_attributes(nxg, 'label')
-labels = list(label_dict.values())
-values = list(set(labels))
-# create empty list for node colors
-node_color = []
-# for each node in the graph
-for lab in labels:
-    if lab == 0.0:
-        node_color.append('blue')
-    elif lab == 1.0:
-        node_color.append('red')
+for file_path in file_paths:
+    relative_path = relpath(file_path,
+                            r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper")
+    print(f"{relative_path}")
+    # Plot Original Graph to Get Scale Factor
+    nxg = nx.read_gpickle(file_path)
 
-pos = nx.get_node_attributes(nxg, 'pos')
-w, h = figaspect(5 / 3)
-fig, ax = plt.subplots(figsize=(w, h))
-nx.draw(nxg, pos, node_color=node_color, node_size=20, ax=ax)
-fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event, graph=nxg, node_color=node_color, fig=fig))
-plt.show()
+    label_dict = nx.get_node_attributes(nxg, 'label')
+    labels = list(label_dict.values())
+    values = list(set(labels))
+    # create empty list for node colors
+    node_color = []
+    # for each node in the graph
+    for lab in labels:
+        if lab == 0.0:
+            node_color.append('blue')
+        elif lab == 1.0:
+            node_color.append('red')
 
-# After Calculating scale factor, prompt user for input
-print("Please Input Scale Factor: ")
-SCALE_FACTOR = float(input())
+    pos = nx.get_node_attributes(nxg, 'pos')
+    w, h = figaspect(5 / 3)
+    fig, ax = plt.subplots(figsize=(w, h))
+    nx.draw(nxg, pos, node_color=node_color, node_size=20, ax=ax)
+    fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event, graph=nxg, node_color=node_color, fig=fig))
+    plt.show()
 
-# Moving everything to origin
-positions = list(pos.values())
-x_pos = []
-y_pos = []
-for coord in positions:
-    x_pos.append(coord[0])
-    y_pos.append(coord[1])
+    # After Calculating scale factor, prompt user for input
+    print("Please Input Scale Factor: ")
+    SCALE_FACTOR = float(input())
 
-min_x = min(x_pos)
-max_x = max(x_pos)
-min_y = min(y_pos)
-max_y = max(y_pos)
-if min_x < 0:  # Negative
-    x_origin = abs(min_x)
-else:  # Positive
-    x_origin = -min_x
-if min_y < 0:  # Negative
-    y_origin = abs(min_y)
-else:  # Positive
-    y_origin = -min_y
+    # Moving everything to origin
+    positions = list(pos.values())
+    x_pos = []
+    y_pos = []
+    for coord in positions:
+        x_pos.append(coord[0])
+        y_pos.append(coord[1])
 
-# Rescale the Graph
-copy_graph = nxg.copy()
+    min_x = min(x_pos)
+    max_x = max(x_pos)
+    min_y = min(y_pos)
+    max_y = max(y_pos)
+    if min_x < 0:  # Negative
+        x_origin = abs(min_x)
+    else:  # Positive
+        x_origin = -min_x
+    if min_y < 0:  # Negative
+        y_origin = abs(min_y)
+    else:  # Positive
+        y_origin = -min_y
 
-for i in range(copy_graph.number_of_nodes()):
-    orig_pos = (copy_graph.nodes[i]['pos'])
-    new_pos = ((orig_pos[0] + x_origin) * SCALE_FACTOR, (orig_pos[1] + y_origin) * SCALE_FACTOR)
-    copy_graph.nodes[i]['pos'] = new_pos
+    # Rescale the Graph
+    copy_graph = nxg.copy()
 
-# Plot the new scaled graph to double check
-scale_label_dict = nx.get_node_attributes(copy_graph, 'label')
-scale_labels = list(label_dict.values())
-scale_values = list(set(labels))
-# create empty list for node colors
-scale_node_color = []
-# for each node in the graph
-for lab in scale_labels:
-    if lab == 0.0:
-        scale_node_color.append('blue')
-    elif lab == 1.0:
-        scale_node_color.append('red')
+    for i in range(copy_graph.number_of_nodes()):
+        orig_pos = (copy_graph.nodes[i]['pos'])
+        new_pos = ((orig_pos[0] + x_origin) * SCALE_FACTOR, (orig_pos[1] + y_origin) * SCALE_FACTOR)
+        copy_graph.nodes[i]['pos'] = new_pos
 
-scale_pos = nx.get_node_attributes(copy_graph, 'pos')
-w, h = figaspect(5 / 3)
-fig, ax = plt.subplots(figsize=(w, h))
-nx.draw(copy_graph, scale_pos, node_color=scale_node_color, node_size=20, ax=ax)
-fig.canvas.mpl_connect('button_press_event', onclick)
-plt.show()
+    # Plot the new scaled graph to double check
+    scale_label_dict = nx.get_node_attributes(copy_graph, 'label')
+    scale_labels = list(label_dict.values())
+    scale_values = list(set(labels))
+    # create empty list for node colors
+    scale_node_color = []
+    # for each node in the graph
+    for lab in scale_labels:
+        if lab == 0.0:
+            scale_node_color.append('blue')
+        elif lab == 1.0:
+            scale_node_color.append('red')
 
-# Save the Results
-file_name = os.path.basename(GRAPH_TO_SCALE_PATH)
-file_name = os.path.splitext(file_name)[0]
-np.save(OUTPUT_FOLDER + '/' + file_name + '.npy', labels)
-#nx.set_node_attributes(copy_graph, labels, 'label')
-#for node in copy_graph.nodes:
-    #copy_graph.nodes[node]['label'] = labels[node]
-nx.write_gpickle(copy_graph, OUTPUT_FOLDER + '/' + file_name + '.gpickle')
+    scale_pos = nx.get_node_attributes(copy_graph, 'pos')
+    w, h = figaspect(5 / 3)
+    fig, ax = plt.subplots(figsize=(w, h))
+    nx.draw(copy_graph, scale_pos, node_color=scale_node_color, node_size=20, ax=ax)
+    fig.canvas.mpl_connect('button_press_event', onclick)
+    plt.show()
+
+    # Save the Results
+    file_name = os.path.basename(file_path)
+    file_name = os.path.splitext(file_name)[0]
+
+
+    #np.save(OUTPUT_FOLDER + '/' + file_name + '.npy', labels)
+    #nx.set_node_attributes(copy_graph, labels, 'label')
+    #for node in copy_graph.nodes:
+        #copy_graph.nodes[node]['label'] = labels[node]
+
+    relative_path = relpath(file_path, r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper")
+    print(f"{relative_path}: {SCALE_FACTOR}")
+
+    data_dict = {relative_path.replace('\\', '/'): SCALE_FACTOR}
+
+    with open(r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper\scale_factors.json", "r+") as file:
+        data = json.load(file, strict=False)
+        data.update(data_dict)
+        file.seek(0)
+        json.dump(data, file, indent=4)
+
+    #nx.write_gpickle(copy_graph, OUTPUT_FOLDER + '/' + file_name + '.gpickle')
+

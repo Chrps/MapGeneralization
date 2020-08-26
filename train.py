@@ -11,12 +11,14 @@ import datetime
 import time
 from sklearn.metrics import balanced_accuracy_score
 
+
 parser = argparse.ArgumentParser()
-parser.add_argument('--desired_net', type=str, default='agnn')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, chebnet
+parser.add_argument('--desired_net', type=str, default='gat')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, chebnet
 parser.add_argument('--num-epochs', type=int, default=1000)
 parser.add_argument('--batch-size', type=int, default=5)
-parser.add_argument('--train-path', type=str, default='data/train_file_list_new.txt')
-parser.add_argument('--valid-path', type=str, default='data/valid_file_list_new.txt')
+parser.add_argument('--data-path', type=str, default=r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper')
+parser.add_argument('--train-file', type=str, default='train_list.txt')
+parser.add_argument('--valid-file', type=str, default='valid_list.txt')
 parser.add_argument('--num-classes', type=int, default=2)
 parser.add_argument('--windowing', type=str, default=False)
 args = parser.parse_args()
@@ -146,15 +148,15 @@ def collate(samples):
     return batched_graph, batched_labels, batched_features
 
 
-def train(desired_net, num_epochs, train_path, valid_path, num_classes, windowing, batch_size):
+def train(desired_net, num_epochs, data_path, train_file, valid_file, num_classes, windowing, batch_size):
 
     # Retrieve dataset and prepare it for DataLoader
-    trainset = graph_utils.group_graphs_labels_features(train_path, r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_reannotated", windowing=windowing)
+    trainset = graph_utils.group_graphs_labels_features(os.path.join(data_path, train_file), data_path, windowing=windowing)
     data_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True,
                              collate_fn=collate)
 
     # Load the validation data
-    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(valid_path, r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_reannotated", windowing=windowing)
+    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(os.path.join(data_path, valid_file), data_path, windowing=windowing)
 
     # create user specified model
     n_features = trainset[0][2].shape[1]  # number of features is same throughout, so just get shape of first graph
@@ -223,9 +225,10 @@ if __name__ == '__main__':
     desired_net = args.desired_net
     num_epochs = args.num_epochs
     batch_size = args.batch_size
-    train_path = args.train_path
-    valid_path = args.valid_path
+    data_path = args.data_path
+    train_file = args.train_file
+    valid_file = args.valid_file
     num_classes = args.num_classes
     windowing = args.windowing
 
-    train(desired_net, num_epochs, train_path, valid_path, num_classes, windowing, batch_size)
+    train(desired_net, num_epochs, data_path, train_file, valid_file, num_classes, windowing, batch_size)
