@@ -4,11 +4,12 @@ import argparse
 from sklearn.metrics import balanced_accuracy_score
 import src.graph_utils as graph_utils
 import src.models as models
+import os
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--evaluate-path1', type=str, default='data/test_file_list.txt')
-parser.add_argument('--evaluate-path2', type=str, default='data/generalizing_test_file_list.txt')
-parser.add_argument('--model-path', type=str, default='models/gat_20-05-15_15-04-29')
+parser.add_argument('--data-path', type=str, default=r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper')
+parser.add_argument('--evaluate-path', type=str, default='train_list_tmp.txt')
+parser.add_argument('--model-path', type=str, default='models/gat_20-06-10_14-37-22_beast')
 args = parser.parse_args()
 
 
@@ -56,8 +57,8 @@ def evaluate(model, graphs, features, labels):
 
 
 if __name__ == '__main__':
-    evaluate_path1 = args.evaluate_path1
-    evaluate_path2 = args.evaluate_path2
+    data_path = args.data_path
+    evaluate_path = args.evaluate_path
     model_path = args.model_path
 
     net, n_features, n_classes = load_model_txt(model_path)
@@ -68,17 +69,8 @@ if __name__ == '__main__':
     model_state = model_path + '/model.pth'
     model.load_state_dict(torch.load(model_state))
 
-    print(evaluate_path1)
-    graphs, labels, features = graph_utils.batch_graphs(evaluate_path1,
-                                                        r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_annotations")
-    overall_acc, class0_acc, class1_acc = evaluate(model, graphs, features, labels)
-    print('Overall Accuracy: %.2f' % overall_acc)
-    print('Door Accuracy: %.2f' % class1_acc)
-    print('Non-door Accuracy: %.2f' % class0_acc)
-
-    print(evaluate_path2)
-    graphs, labels, features = graph_utils.batch_graphs(evaluate_path2,
-                                                        r"C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\scaled_graph_annotations")
+    print(evaluate_path)
+    graphs, labels, features = graph_utils.batch_graphs(os.path.join(data_path, evaluate_path), data_path)
     overall_acc, class0_acc, class1_acc = evaluate(model, graphs, features, labels)
     print('Overall Accuracy: %.2f' % overall_acc)
     print('Door Accuracy: %.2f' % class1_acc)

@@ -11,12 +11,14 @@ import datetime
 import time
 from sklearn.metrics import balanced_accuracy_score
 
+
 parser = argparse.ArgumentParser()
-parser.add_argument('--desired_net', type=str, default='gcn')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, chebnet
+parser.add_argument('--desired_net', type=str, default='gat')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, chebnet
 parser.add_argument('--num-epochs', type=int, default=1000)
-parser.add_argument('--batch-size', type=int, default=7)
-parser.add_argument('--train-list', type=str, default='data/public_train.txt')
-parser.add_argument('--valid-list', type=str, default='data/public_val.txt')
+parser.add_argument('--batch-size', type=int, default=5)
+parser.add_argument('--data-path', type=str, default='data/Public')
+parser.add_argument('--train-file', type=str, default='train_list.txt')
+parser.add_argument('--valid-file', type=str, default='valid_list.txt')
 parser.add_argument('--num-classes', type=int, default=2)
 parser.add_argument('--windowing', type=str, default=False)
 args = parser.parse_args()
@@ -146,16 +148,15 @@ def collate(samples):
     return batched_graph, batched_labels, batched_features
 
 
-def train(desired_net, num_epochs, train_list, valid_list, num_classes, windowing, batch_size):
-
+def train(desired_net, num_epochs, data_path, train_file, valid_file, num_classes, windowing, batch_size):
     # Retrieve dataset and prepare it for DataLoader
-    trainset = graph_utils.group_graphs_labels_features(train_list, windowing=windowing)
+    trainset = graph_utils.group_graphs_labels_features(os.path.join(data_path, train_file), data_path, windowing=windowing)
     data_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True,
                              num_workers=0, collate_fn=collate)
     print("data_loader is producing {} bathces with size {}".format(len(data_loader),batch_size))
 
     # Load the validation data
-    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(valid_list, windowing=windowing)
+    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(os.path.join(data_path, valid_file), data_path, windowing=windowing)
 
     # create user specified model
     n_features = trainset[0][2].shape[1]  # number of features is same throughout, so just get shape of first graph
@@ -225,9 +226,10 @@ if __name__ == '__main__':
     desired_net = args.desired_net
     num_epochs = args.num_epochs
     batch_size = args.batch_size
-    train_list = args.train_list
-    valid_list = args.valid_list
+    data_path = args.data_path
+    train_file = args.train_file
+    valid_file = args.valid_file
     num_classes = args.num_classes
     windowing = args.windowing
 
-    train(desired_net, num_epochs, train_list, valid_list, num_classes, windowing, batch_size)
+    train(desired_net, num_epochs, data_path, train_file, valid_file, num_classes, windowing, batch_size)

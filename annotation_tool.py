@@ -7,6 +7,7 @@ import networkx as nx
 import os
 import argparse
 
+
 class SelectFromCollection(object):
     def __init__(self, ax, collection, alpha_other=0.3):
         self.canvas = ax.figure.canvas
@@ -52,7 +53,7 @@ if __name__ == '__main__':
     # construct the argument parser and parse the arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-g", "--graph", type=str,
-                    default='data/graphs/', help="gpickled graph")
+                    default='data/Public/AU/anno/A1322PE-0_w_annotations.gpickle', help="gpickled graph")
 
     args = vars(ap.parse_args())
 
@@ -100,13 +101,13 @@ if __name__ == '__main__':
             instance -= 1
 
         if event.key == "b":
-            file_name = os.path.basename(GRAPH_PATH)
+            file_name = os.path.basename(args['graph'])
             file_name = os.path.splitext(file_name)[0]
-            np.save('C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/scaled_graph_reannotated/Canterbury/' + file_name + '.npy', labels)
+            #np.save('C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/scaled_graph_reannotated/Canterbury/' + file_name + '.npy', labels)
             nx.set_node_attributes(G, labels, 'label')
             for node in G.nodes:
                 G.nodes[node]['label'] = labels[node]
-            nx.write_gpickle(G, 'C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/scaled_graph_reannotated/Canterbury/' + file_name + '_w_annotations.gpickle')
+            nx.write_gpickle(G, args['graph'])
 
         if event.key == "enter":
             #print(mode)

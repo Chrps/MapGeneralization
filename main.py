@@ -1,5 +1,4 @@
 from src.dxf_utils import DxfReader
-
 import os
 import argparse
 
@@ -24,7 +23,7 @@ if __name__ == "__main__":
     # construct the argument parser and parse the arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-d", "--dxf", type=str,
-                    default='data/dxf_files', help="directory with dxf files")
+                    default='data/Public/Musikkenshus/dxf', help="directory with dxf files")
 
     args = vars(ap.parse_args())
 

@@ -19,7 +19,7 @@ GCN_CONFIG = {
 }
 
 GAT_CONFIG = {
-    'extra_args': [12, 10, [3] * 12 + [1], F.elu, 0.1, 0.1, 0.2, True],
+    'extra_args': [8, 8, [3] * 8 + [1], F.elu, 0.0, 0.0, 0.2, True],
     'lr': 1e-3,
     'weight_decay': 5e-4,
 }
