@@ -1,5 +1,5 @@
 #!/bin/bash
-mkdir datasets
+#mkdir datasets
 
 xhost +local:
 docker run -it --net=host \
@@ -12,7 +12,6 @@ docker run -it --net=host \
   -e QT_GRAPHICSSYSTEM=native \
   -e CONTAINER_NAME=dockermapspeople-dev \
   -v "/tmp/.X11-unix:/tmp/.X11-unix" \
-  -v "~/.bash_history:/root/.bash_history" \
   -v "$(pwd)/..:/home/$USER" \
-  -v "/home/markpp/datasets:/home/markpp/datasets" \
   dockermapspeople:latest
+#  -v "/home/markpp/datasets:/home/markpp/datasets" \

@@ -44,7 +44,10 @@ class LightningNodeClassifier(pl.LightningModule):
       network, config = models.get_model_and_config(self.hparams.network)
       self.model = network(self.hparams.n_features,
                       self.hparams.n_classes,
-                      *self.hparams.extra_args)
+                      *config['extra_args'])
+
+      self.lr = config['lr']
+      self.lr = config['weight_decay']
 
       #self.criterion = nn.CrossEntropyLoss()
 
@@ -54,8 +57,8 @@ class LightningNodeClassifier(pl.LightningModule):
     # create folds from training set
     def prepare_data(self):
         # split the dataset in train and test set
-        self.data_train = graph_utils.group_graphs_labels_features(self.hparams.train_list, windowing=self.hparams.windowing)
-        self.data_val = graph_utils.group_graphs_labels_features(self.hparams.val_list, windowing=self.hparams.windowing)
+        self.data_train = graph_utils.group_graphs_labels_features(self.hparams.data_path, self.hparams.train_list, windowing=self.hparams.windowing)
+        self.data_val = graph_utils.group_graphs_labels_features(self.hparams.data_path, self.hparams.val_list, windowing=self.hparams.windowing)
         #self.data_test = graph_utils.group_graphs_labels_features(self.hparams.test_list, windowing=self.hparams.windowing)
 
     def train_dataloader(self):
@@ -68,7 +71,8 @@ class LightningNodeClassifier(pl.LightningModule):
         #return DataLoader(self.data_test, batch_size=self.hparams.batch_size, shuffle=True, num_workers=self.hparams.n_workers)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.hparams.lr)
+        optimizer = torch.optim.Adam(self.model.parameters(),
+                                     lr=self.lr, weight_decay=self.weight_decay)
         return optimizer
 
     def training_step(self, batch, batch_idx):

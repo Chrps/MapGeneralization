@@ -11,9 +11,9 @@ from itertools import count
 from sklearn.cluster import DBSCAN
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data-path', type=str, default=r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper')
+parser.add_argument('--data-path', type=str, default='data/public')
 parser.add_argument('--predict-path', type=str, default='test_list.txt')
-parser.add_argument('--model_name', type=str, default='gat_20-06-10_14-37-22_beast')
+parser.add_argument('--model_name', type=str, default='gat_20-05-22_19-04-14_final')
 
 args = parser.parse_args()
 
@@ -360,4 +360,3 @@ if __name__ == '__main__':
     model_name = args.model_name
 
     predict(data_path, predict_path, model_name)
-

@@ -127,4 +127,6 @@ venv.bak/
 
 # training logs
 
-lightning_logs
+lightning_logs/
+data/Private/
+trained_models/

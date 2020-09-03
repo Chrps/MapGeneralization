@@ -13,7 +13,7 @@ from sklearn.metrics import balanced_accuracy_score
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--desired_net', type=str, default='gat')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, chebnet
+parser.add_argument('--desired_net', type=str, default='chebnet')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, chebnet('bool' object is not callable chebconv.py", line 159)
 parser.add_argument('--num-epochs', type=int, default=1000)
 parser.add_argument('--batch-size', type=int, default=5)
 parser.add_argument('--data-path', type=str, default='data/Public')
@@ -110,7 +110,7 @@ def save_model(model, epoch, desired_net, n_features, num_classes, start_date, o
     # Saved the model
     start_timestamp = start_date.strftime("_%y-%m-%d_%H-%M-%S")
     save_name = desired_net + start_timestamp
-    model_dir = 'models/' + save_name
+    model_dir = 'trained_models/' + save_name
     if not os.path.exists(model_dir):
         os.mkdir(model_dir)
     model_path = model_dir + '/model.pth'
@@ -150,13 +150,13 @@ def collate(samples):
 
 def train(desired_net, num_epochs, data_path, train_file, valid_file, num_classes, windowing, batch_size):
     # Retrieve dataset and prepare it for DataLoader
-    trainset = graph_utils.group_graphs_labels_features(os.path.join(data_path, train_file), data_path, windowing=windowing)
+    trainset = graph_utils.group_graphs_labels_features(data_path, train_file, windowing=windowing)
     data_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True,
                              num_workers=0, collate_fn=collate)
     print("data_loader is producing {} bathces with size {}".format(len(data_loader),batch_size))
 
     # Load the validation data
-    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(os.path.join(data_path, valid_file), data_path, windowing=windowing)
+    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(data_path, valid_file, windowing=windowing)
 
     # create user specified model
     n_features = trainset[0][2].shape[1]  # number of features is same throughout, so just get shape of first graph

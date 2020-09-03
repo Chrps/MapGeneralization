@@ -85,9 +85,9 @@ def calculate_angles_and_length(nxg):
             nxg.nodes[node]['min_length'] = length_min
 
 
-def group_graphs_labels_features(data_list, windowing=False):
+def group_graphs_labels_features(data_root, data_list, windowing=False):
     #data_path = 'data/'
-    data_files = [line.rstrip() for line in open(data_list)]
+    data_files = [line.rstrip() for line in open(os.path.join(data_root, data_list))]
 
     # Initialize empty list
     dataset = []
@@ -95,7 +95,7 @@ def group_graphs_labels_features(data_list, windowing=False):
     print("loading {} files".format(len(data_files)))
     for idx, file in enumerate(data_files):
         graph = []
-        nxg = nx.read_gpickle(file)
+        nxg = nx.read_gpickle(os.path.join(data_root, file))
 
         # Get the annotated labels
         labels = get_labels(nxg)
@@ -113,8 +113,8 @@ def group_graphs_labels_features(data_list, windowing=False):
     return dataset
 
 
-def batch_graphs(data_list, windowing=False):
-    data_files = [line.rstrip() for line in open(data_list)]
+def batch_graphs(data_root, data_list, windowing=False):
+    data_files = [line.rstrip() for line in open(os.path.join(data_root, data_list))]
 
     all_graphs = []
     all_labels = []
@@ -123,7 +123,7 @@ def batch_graphs(data_list, windowing=False):
     for file in data_files:
         # Convert the gpickle file to a dgl graph for batching
         #dgl_g = convert_gpickle_to_dgl_graph(file)
-        nxg = nx.read_gpickle(file)
+        nxg = nx.read_gpickle(os.path.join(data_root, file))
 
         if windowing:
             nxg_list = sliding_window.perform_windowing(nxg)
