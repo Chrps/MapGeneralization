@@ -130,3 +130,4 @@ venv.bak/
 lightning_logs/
 data/Private/
 trained_models/
+*.ckpt

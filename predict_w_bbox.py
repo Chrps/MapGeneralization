@@ -19,7 +19,7 @@ args = parser.parse_args()
 
 
 def load_model_txt(model_name):
-    model_txt = 'models/' + model_name + '/predict_info.txt'
+    model_txt = 'trained_models/' + model_name + '/predict_info.txt'
     data = [line.rstrip() for line in open(model_txt)]
 
     # network train on ()
@@ -186,7 +186,7 @@ def predict(data_path, predict_path, model_name):
     model = trained_net(n_features,
                         n_classes,
                         *config['extra_args'])
-    model_path = 'models/' + model_name + '/model.pth'
+    model_path = 'trained_models/' + model_name + '/model.pth'
     model.load_state_dict(torch.load(model_path))
     print(model)
 

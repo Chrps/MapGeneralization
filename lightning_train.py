@@ -7,7 +7,7 @@ import pytorch_lightning as pl
 
 
 hparams = {'data_path': 'data/Public',
-           'train_list': 'train_list.txt',
+           'train_list': 'test_list.txt',
            'test_list': 'test_list.txt',
            'val_list': 'valid_list.txt',
            'network': 'gat', #gcn', 'gat', 'monet', 'graphsage', 'appnp', 'tagcn', 'agnn', 'sgc', 'gin', 'chebnet'
@@ -15,7 +15,8 @@ hparams = {'data_path': 'data/Public',
            'n_classes': 2,
            'n_features': 5,
            'windowing': False,
-           'n_workers':0}
+           'n_workers':4,
+           'gpus':None}
 
 if __name__ == '__main__':
     """
@@ -33,7 +34,10 @@ if __name__ == '__main__':
     args = vars(ap.parse_args())
 
     logger = pl.loggers.TensorBoardLogger('lightning_logs/cpu-net-{}_bs-{}'.format(hparams['network'],hparams['batch_size']))
-    trainer = pl.Trainer(gpus=None, max_epochs=1000, logger=logger) #gpus=None
+    trainer = pl.Trainer(gpus=hparams['gpus'],
+                         max_epochs=1000,
+                         logger=logger,
+                         default_save_path='trained_models/')
 
     from lightning_model import LightningNodeClassifier
     model = LightningNodeClassifier(hparams)

@@ -11,15 +11,15 @@ from itertools import count
 from sklearn.cluster import DBSCAN
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data-path', type=str, default=r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper')
+parser.add_argument('--data-path', type=str, default='data/Public')
 parser.add_argument('--predict-path', type=str, default='test_list.txt')
-parser.add_argument('--model_name', type=str, default='gat_20-06-10_14-37-22_beast')
+parser.add_argument('--model_name', type=str, default='gat_20-05-22_19-04-14_final')
 
 args = parser.parse_args()
 
 
 def load_model_txt(model_name):
-    model_txt = 'models/' + model_name + '/predict_info.txt'
+    model_txt = 'trained_models/' + model_name + '/predict_info.txt'
     data = [line.rstrip() for line in open(model_txt)]
 
     # network train on ()
@@ -411,7 +411,7 @@ def predict(data_path, predict_path, model_name):
     model = trained_net(n_features,
                         n_classes,
                         *config['extra_args'])
-    model_path = 'models/' + model_name + '/model.pth'
+    model_path = 'trained_models/' + model_name + '/model.pth'
     model.load_state_dict(torch.load(model_path))
     print(model)
 
@@ -589,4 +589,3 @@ if __name__ == '__main__':
     model_name = args.model_name
 
     predict(data_path, predict_path, model_name)
-

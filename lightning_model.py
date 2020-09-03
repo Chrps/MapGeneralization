@@ -21,84 +21,98 @@ def collate(samples):
     batched_labels = torch.cat(labels, out=batched_labels)
     batched_features = torch.Tensor(batched_graph.number_of_nodes(), 1)
     batched_features = torch.cat(features, out=batched_features)
-
     return batched_graph, batched_labels, batched_features
 
-def compute_loss_weights(labels):
-    n_class0 = np.where(labels == 0)[0].sum()
-    n_class1 = np.where(labels == 1)[0].sum()
-    door_weight = n_class0/(n_class0+n_class1)
-    non_door_weight = 1.0-door_weight
-    weights = [non_door_weight, door_weight]
-    return torch.FloatTensor(weights)#.cuda()
-
+def compute_class_weights(labels):
+    n_doors = torch.sum(labels)
+    n_other = len(labels) - n_doors
+    other_weight = torch.true_divide(n_doors,len(labels))
+    door_weight = 1.0-other_weight
+    return torch.FloatTensor([other_weight, door_weight])#.cuda()
 
 class LightningNodeClassifier(pl.LightningModule):
 
     def __init__(self, hparams):
       super().__init__()
-
       self.hparams = hparams
-
-      #print(self.data_train[0][2].shape[1])
       network, config = models.get_model_and_config(self.hparams.network)
       self.model = network(self.hparams.n_features,
                       self.hparams.n_classes,
                       *config['extra_args'])
-
       self.lr = config['lr']
-      self.lr = config['weight_decay']
-
-      #self.criterion = nn.CrossEntropyLoss()
+      self.weight_decay = config['weight_decay']
 
     def forward(self, g, f):
         return self.model(g, f)
 
-    # create folds from training set
     def prepare_data(self):
-        # split the dataset in train and test set
-        self.data_train = graph_utils.group_graphs_labels_features(self.hparams.data_path, self.hparams.train_list, windowing=self.hparams.windowing)
-        self.data_val = graph_utils.group_graphs_labels_features(self.hparams.data_path, self.hparams.val_list, windowing=self.hparams.windowing)
+        self.data_train = graph_utils.group_graphs_labels_features(self.hparams.data_path,
+                                                                   self.hparams.train_list,
+                                                                   windowing=self.hparams.windowing)
+        self.data_val = graph_utils.group_graphs_labels_features(self.hparams.data_path,
+                                                                 self.hparams.val_list,
+                                                                 windowing=self.hparams.windowing)
         #self.data_test = graph_utils.group_graphs_labels_features(self.hparams.test_list, windowing=self.hparams.windowing)
 
     def train_dataloader(self):
-        return DataLoader(self.data_train, batch_size=self.hparams.batch_size, shuffle=True, num_workers=self.hparams.n_workers, collate_fn=collate)
+        return DataLoader(self.data_train,
+                          batch_size=self.hparams.batch_size,
+                          shuffle=True,
+                          num_workers=self.hparams.n_workers,
+                          collate_fn=collate)
 
     def val_dataloader(self):
-        return DataLoader(self.data_val, batch_size=self.hparams.batch_size, shuffle=False, num_workers=self.hparams.n_workers, collate_fn=collate)
+        return DataLoader(self.data_val,
+                          batch_size=self.hparams.batch_size,
+                          shuffle=False,
+                          num_workers=self.hparams.n_workers,
+                          collate_fn=collate)
 
-    #def test_dataloader(self):
-        #return DataLoader(self.data_test, batch_size=self.hparams.batch_size, shuffle=True, num_workers=self.hparams.n_workers)
+    '''
+    def test_dataloader(self):
+        return DataLoader(self.data_test,
+                          batch_size=self.hparams.batch_size,
+                          shuffle=False,
+                          num_workers=self.hparams.n_workers,
+                          collate_fn=collate)
+    '''
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(),
-                                     lr=self.lr, weight_decay=self.weight_decay)
+                                     lr=self.lr,
+                                     weight_decay=self.weight_decay)
         return optimizer
 
     def training_step(self, batch, batch_idx):
         graphs, labels, features = batch
         output = self.forward(graphs, features)
-        criterion = nn.CrossEntropyLoss(weight=compute_loss_weights(labels.cpu()))
+        #if self.hparams.gpus:
+        #    criterion = nn.CrossEntropyLoss(weight=compute_loss_weights(labels.cpu()))
+        #else:
+        criterion = nn.CrossEntropyLoss(weight=compute_class_weights(labels))
         loss = criterion(output, labels)
         return {'loss': loss}
 
     def training_epoch_end(self, outputs):
-        epoch_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        tensorboard_logs = {'epoch_loss': epoch_loss}
-        return {'epoch_loss': epoch_loss, 'log': tensorboard_logs}
+        loss = torch.stack([x['batch_loss'] for x in outputs]).mean()
+        tensorboard_logs = {'train_loss': loss}
+        return {'train_loss': loss, 'log': tensorboard_logs}
 
     def validation_step(self, batch, batch_idx):
         graphs, labels, features = batch
         output = self.forward(graphs, features)
-        criterion = nn.CrossEntropyLoss(weight=compute_loss_weights(labels.cpu()))
-
+        #if self.hparams.gpus:
+        #    criterion = nn.CrossEntropyLoss(weight=compute_loss_weights(labels.cpu()))
+        #else:
+        criterion = nn.CrossEntropyLoss(weight=compute_class_weights(labels))
         batch_val_loss = criterion(output, labels)
-
-        labels = labels.cpu()
-        pred = output.argmax(dim=1, keepdim=True).cpu().view_as(labels)
-
+        if self.hparams.gpus:
+            labels = labels.cpu()
+            pred = output.argmax(dim=1, keepdim=True).cpu().view_as(labels)
+        else:
+            pred = output.argmax(dim=1, keepdim=True).view_as(labels)
         overall_acc = balanced_accuracy_score(y_true=labels, y_pred=pred)
-
+        #https://github.com/pytorch/ignite
         class_accs = []
         for cl in range(self.hparams.n_classes):
             class_labels = labels[labels==cl]
@@ -106,18 +120,18 @@ class LightningNodeClassifier(pl.LightningModule):
             class_accs.append(accuracy_score(class_labels, class_pred))
 
         #batch_val_correct = pred.eq(labels).sum().item()/self.hparams.batch_size
-        return {'val_loss': batch_val_loss, 'val_overall_acc': overall_acc, 'val_class0_acc': class_accs[0], 'val_class1_acc': class_accs[1]}
+        return {'loss': batch_val_loss, 'overall_acc': overall_acc, 'class0_acc': class_accs[0], 'class1_acc': class_accs[1]}
 
     def validation_epoch_end(self, outputs):
-        epoch_val_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        epoch_val_overall_acc = np.stack([x['val_overall_acc'] for x in outputs]).mean()
-        epoch_val_class0_acc = np.stack([x['val_class0_acc'] for x in outputs]).mean()
-        epoch_val_class1_acc = np.stack([x['val_class1_acc'] for x in outputs]).mean()
-        tensorboard_logs = {'epoch_val_loss': epoch_val_loss,
-                            'epoch_val_overall_acc': epoch_val_overall_acc,
-                            'epoch_val_class0_acc': epoch_val_class0_acc,
-                            'epoch_val_class1_acc': epoch_val_class1_acc}
-        return {'epoch_val_loss': epoch_val_loss, 'log': tensorboard_logs}
+        loss = torch.stack([x['loss'] for x in outputs]).mean()
+        overall_acc = np.stack([x['overall_acc'] for x in outputs]).mean()
+        class0_acc = np.stack([x['class0_acc'] for x in outputs]).mean()
+        class1_acc = np.stack([x['class1_acc'] for x in outputs]).mean()
+        tensorboard_logs = {'val_loss': loss,
+                            'val_overall_acc': overall_acc,
+                            'val_class0_acc': class0_acc,
+                            'val_class1_acc': class1_acc}
+        return {'val_loss': loss, 'log': tensorboard_logs}
 
     '''
     # TODO re-weight
