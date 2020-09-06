@@ -71,9 +71,7 @@ def draw_DBSCAN_inst(nx_G, ax, positions, instances):
     nx.draw_networkx(nx_G.to_undirected(), positions, node_color=colors,
                      with_labels=False, node_size=5, ax=ax, cmap=plt.cm.jet)
 
-
 def post_processing(nxg_, predictions_):
-
     # Graph morphology closing
     predictions_alt = []
     for node in nxg_.nodes:

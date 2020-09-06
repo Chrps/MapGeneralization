@@ -85,7 +85,7 @@ def calculate_angles_and_length(nxg):
             nxg.nodes[node]['min_length'] = length_min
 
 
-def group_graphs_labels_features(data_root, data_list, windowing=False):
+def group_labels_features(data_root, data_list, windowing=False):
     #data_path = 'data/'
     data_files = [line.rstrip() for line in open(os.path.join(data_root, data_list))]
 
