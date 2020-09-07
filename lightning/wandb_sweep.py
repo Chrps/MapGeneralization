@@ -16,7 +16,7 @@ if __name__ == '__main__':
     # construct the argument parser and parse the arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-c", "--command", type=str,
-                    default='wandb agent markpp/MapGeneralization/1ot9t6eb', help="wandb agent command")
+                    default='wandb agent markpp/MapGeneralization/dbxr916q', help="wandb agent command")
 
     args = vars(ap.parse_args())
 

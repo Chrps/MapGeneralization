@@ -13,8 +13,8 @@ from sklearn.metrics import balanced_accuracy_score
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--desired_net', type=str, default='gat')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, chebnet('bool' object is not callable chebconv.py", line 159)
-parser.add_argument('--num-epochs', type=int, default=1000)
+parser.add_argument('--desired_net', type=str, default='sgc')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, sgc # broken: chebnet, monet, 
+parser.add_argument('--num-epochs', type=int, default=250)
 parser.add_argument('--batch-size', type=int, default=5)
 parser.add_argument('--data-path', type=str, default='data/Public')
 parser.add_argument('--train-file', type=str, default='train_list.txt')
@@ -85,7 +85,7 @@ def plot_loss_and_acc(n_epochs, epoch_list, losses, overall_acc_list, acc0_list,
         # Where to save image
         start_timestamp = start_date.strftime("_%y-%m-%d_%H-%M-%S")
         save_name = desired_net + start_timestamp
-        model_dir = 'models/' + save_name + '/'
+        model_dir = 'trained_models/' + save_name + '/'
         if not os.path.exists(model_dir):
             os.mkdir(model_dir)
         plt.savefig(model_dir + figure_name)
@@ -150,7 +150,7 @@ def collate(samples):
 
 def train(desired_net, num_epochs, data_path, train_file, valid_file, num_classes, windowing, batch_size):
     # Retrieve dataset and prepare it for DataLoader
-    trainset = graph_utils.group_graphs_labels_features(data_path, train_file, windowing=windowing)
+    trainset = graph_utils.group_labels_features(data_path, train_file, windowing=windowing)
     data_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True,
                              num_workers=0, collate_fn=collate)
     print("data_loader is producing {} bathces with size {}".format(len(data_loader),batch_size))

@@ -1,0 +1,1 @@
+https://app.wandb.ai/markpp/MapGeneralization/reports/Batch-size-network-and-windowing--VmlldzoyMzAxNTk?accessToken=zkcski2vo6khwh5ijbfydoedrcro8bg6wddihaybj0j2vpbmu5iiwoac492gesq1
