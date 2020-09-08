@@ -37,20 +37,21 @@ class GCN(nn.Module):
     def __init__(self,
                  in_feats,
                  n_classes,
-                 n_hidden,
+                 size_hidden,
                  n_layers,
                  activation,
                  dropout):
         super(GCN, self).__init__()
         self.layers = nn.ModuleList()
         # input layer
-        self.layers.append(GraphConv(in_feats, n_hidden, activation=activation))
+        self.layers.append(GraphConv(in_feats, size_hidden, activation=activation, allow_zero_in_degree=False))
         # hidden layers
         for i in range(n_layers - 1):
-            self.layers.append(GraphConv(n_hidden, n_hidden, activation=activation))
+            self.layers.append(GraphConv(size_hidden, size_hidden, activation=activation, allow_zero_in_degree=False))
         # output layer
-        self.layers.append(GraphConv(n_hidden, n_classes))
+        self.layers.append(GraphConv(size_hidden, n_classes, allow_zero_in_degree=False))
         self.dropout = nn.Dropout(p=dropout)
+
 
     def forward(self, g, features):
 
@@ -66,8 +67,8 @@ class GAT(nn.Module):
     def __init__(self,
                  in_feats,
                  num_classes,
-                 num_hidden,
-                 num_layers,
+                 size_hidden,
+                 n_layers,
                  heads,
                  activation,
                  feat_drop,
@@ -75,27 +76,27 @@ class GAT(nn.Module):
                  negative_slope,
                  residual):
         super(GAT, self).__init__()
-        self.num_layers = num_layers
+        self.n_layers = n_layers
         self.gat_layers = nn.ModuleList()
         self.activation = activation
         # input projection (no residual)
         self.gat_layers.append(GATConv(
-            in_feats, num_hidden, heads[0],
-            feat_drop, attn_drop, negative_slope, False, self.activation))
+            in_feats, size_hidden, heads[0],
+            feat_drop, attn_drop, negative_slope, False, self.activation, allow_zero_in_degree=False))
         # hidden layers
-        for l in range(1, num_layers):
-            # due to multi-head, the in_dim = num_hidden * num_heads
+        for l in range(1, n_layers):
+            # due to multi-head, the in_dim = size_hidden * num_heads
             self.gat_layers.append(GATConv(
-                num_hidden * heads[l-1], num_hidden, heads[l],
-                feat_drop, attn_drop, negative_slope, residual, self.activation))
+                size_hidden * heads[l-1], size_hidden, heads[l],
+                feat_drop, attn_drop, negative_slope, residual, self.activation, allow_zero_in_degree=False))
         # output projection
         self.gat_layers.append(GATConv(
-            num_hidden * heads[-2], num_classes, heads[-1],
-            feat_drop, attn_drop, negative_slope, residual, None))
+            size_hidden * heads[-2], num_classes, heads[-1],
+            feat_drop, attn_drop, negative_slope, residual, None, allow_zero_in_degree=False))
 
     def forward(self, g, features):
         h = features
-        for l in range(self.num_layers):
+        for l in range(self.n_layers):
             h = self.gat_layers[l](g, h).flatten(1)
         # output projection
         logits = self.gat_layers[-1](g, h).mean(1)
@@ -106,7 +107,7 @@ class GraphSAGE(nn.Module):
     def __init__(self,
                  in_feats,
                  n_classes,
-                 n_hidden,
+                 size_hidden,
                  n_layers,
                  activation,
                  dropout,
@@ -115,12 +116,12 @@ class GraphSAGE(nn.Module):
         self.layers = nn.ModuleList()
 
         # input layer
-        self.layers.append(SAGEConv(in_feats, n_hidden, aggregator_type, feat_drop=dropout, activation=activation))
+        self.layers.append(SAGEConv(in_feats, size_hidden, aggregator_type, feat_drop=dropout, activation=activation))
         # hidden layers
         for i in range(n_layers - 1):
-            self.layers.append(SAGEConv(n_hidden, n_hidden, aggregator_type, feat_drop=dropout, activation=activation))
+            self.layers.append(SAGEConv(size_hidden, size_hidden, aggregator_type, feat_drop=dropout, activation=activation))
         # output layer
-        self.layers.append(SAGEConv(n_hidden, n_classes, aggregator_type, feat_drop=dropout, activation=None)) # activation None
+        self.layers.append(SAGEConv(size_hidden, n_classes, aggregator_type, feat_drop=dropout, activation=None)) # activation None
 
     def forward(self, g, features):
         h = features
@@ -133,7 +134,7 @@ class APPNP(nn.Module):
     def __init__(self,
                  in_feats,
                  n_classes,
-                 n_hidden,
+                 size_hidden,
                  n_layers,
                  activation,
                  feat_drop,
@@ -143,12 +144,12 @@ class APPNP(nn.Module):
         super(APPNP, self).__init__()
         self.layers = nn.ModuleList()
         # input layer
-        self.layers.append(nn.Linear(in_feats, n_hidden))
+        self.layers.append(nn.Linear(in_feats, size_hidden))
         # hidden layers
         for i in range(1, n_layers):
-            self.layers.append(nn.Linear(n_hidden, n_hidden))
+            self.layers.append(nn.Linear(size_hidden, size_hidden))
         # output layer
-        self.layers.append(nn.Linear(n_hidden, n_classes))
+        self.layers.append(nn.Linear(size_hidden, n_classes))
         self.activation = activation
         if feat_drop:
             self.feat_drop = nn.Dropout(feat_drop)
@@ -178,19 +179,19 @@ class TAGCN(nn.Module):
     def __init__(self,
                  in_feats,
                  n_classes,
-                 n_hidden,
+                 size_hidden,
                  n_layers,
                  activation,
                  dropout):
         super(TAGCN, self).__init__()
         self.layers = nn.ModuleList()
         # input layer
-        self.layers.append(TAGConv(in_feats, n_hidden, activation=activation))
+        self.layers.append(TAGConv(in_feats, size_hidden, activation=activation))
         # hidden layers
         for i in range(n_layers - 1):
-            self.layers.append(TAGConv(n_hidden, n_hidden, activation=activation))
+            self.layers.append(TAGConv(size_hidden, size_hidden, activation=activation))
         # output layer
-        self.layers.append(TAGConv(n_hidden, n_classes)) #activation=None
+        self.layers.append(TAGConv(size_hidden, n_classes)) #activation=None
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, g, features):
@@ -206,23 +207,23 @@ class AGNN(nn.Module):
     def __init__(self,
                  in_feats,
                  n_classes,
-                 n_hidden,
+                 size_hidden,
                  n_layers,
                  init_beta,
                  learn_beta,
                  dropout):
         super(AGNN, self).__init__()
         self.layers = nn.ModuleList(
-            [AGNNConv(init_beta, learn_beta) for _ in range(n_layers)]
+            [AGNNConv(init_beta, learn_beta, allow_zero_in_degree=False) for _ in range(n_layers)]
         )
         self.proj = nn.Sequential(
             nn.Dropout(dropout),
-            nn.Linear(in_feats, n_hidden),
+            nn.Linear(in_feats, size_hidden),
             nn.ReLU()
         )
         self.cls = nn.Sequential(
             nn.Dropout(dropout),
-            nn.Linear(n_hidden, n_classes)
+            nn.Linear(size_hidden, n_classes)
         )
 
     def forward(self, g, features):
@@ -231,20 +232,19 @@ class AGNN(nn.Module):
             h = layer(g, h)
         return self.cls(h)
 
-
 class SGC(nn.Module):
     def __init__(self,
                  in_feats,
                  n_classes,
-                 n_hidden,
                  k,
                  bias):
         super(SGC, self).__init__()
         self.net = SGConv(in_feats,
                           n_classes,
                           k=k,
-                          cached=True,
-                          bias=bias)
+                          cached=False,
+                          bias=bias,
+                          norm=None)
 
     def forward(self, g, features):
         return self.net(g, features)
@@ -254,7 +254,7 @@ class GIN(nn.Module):
     def __init__(self,
                  in_feats,
                  n_classes,
-                 n_hidden,
+                 size_hidden,
                  n_layers,
                  init_eps,
                  learn_eps):
@@ -264,7 +264,7 @@ class GIN(nn.Module):
             GINConv(
                 nn.Sequential(
                     nn.Dropout(0.0),
-                    nn.Linear(in_feats, n_hidden),
+                    nn.Linear(in_feats, size_hidden),
                     nn.ReLU(),
                 ),
                 'mean',
@@ -277,7 +277,7 @@ class GIN(nn.Module):
                 GINConv(
                     nn.Sequential(
                         nn.Dropout(0.0),
-                        nn.Linear(n_hidden, n_hidden),
+                        nn.Linear(size_hidden, size_hidden),
                         nn.ReLU()
                     ),
                     'mean',
@@ -289,7 +289,7 @@ class GIN(nn.Module):
             GINConv(
                 nn.Sequential(
                     nn.Dropout(0.0),
-                    nn.Linear(n_hidden, n_classes),
+                    nn.Linear(size_hidden, n_classes),
                 ),
                 'mean',
                 init_eps,
@@ -308,47 +308,48 @@ class ChebNet(nn.Module):
     def __init__(self,
                  in_feats,
                  n_classes,
-                 n_hidden,
+                 size_hidden,
                  n_layers,
                  k,
+                 activation,
                  bias):
         super(ChebNet, self).__init__()
         self.layers = nn.ModuleList()
         self.layers.append(
-            ChebConv(in_feats, n_hidden, k, bias)
+            ChebConv(in_feats, size_hidden, k, activation, bias)
         )
         for _ in range(n_layers - 1):
             self.layers.append(
-                ChebConv(n_hidden, n_hidden, k, bias)
+                ChebConv(size_hidden, size_hidden, k, activation, bias)
             )
 
         self.layers.append(
-            ChebConv(n_hidden, n_classes, k, bias)
+            ChebConv(size_hidden, n_classes, k, activation, bias)
         )
 
     def forward(self, g, features):
         h = features
         for layer in self.layers:
             h = layer(g, h)
-            #h = layer(g, h, [2])
         return h
 
-
+#TODO: forward() missing 1 required positional argument: 'pseudo'
 class MoNet(nn.Module):
     def __init__(self,
                  in_feats,
                  n_classes,
+                 pseudo_coord,
                  n_kernels,
                  hiddens):
         super(MoNet, self).__init__()
         self.layers = nn.ModuleList()
         # Input layer
         self.layers.append(
-            GMMConv(in_feats, hiddens[0], 4, n_kernels))
+            GMMConv(in_feats, hiddens[0], dim=pseudo_coord, n_kernels=n_kernels))
 
         # Hidden layer
         for i in range(1, len(hiddens)):
-            self.layers.append(GMMConv(hiddens[i - 1], hiddens[i], 4, n_kernels))
+            self.layers.append(GMMConv(hiddens[i - 1], hiddens[i], dim=pseudo_coord, n_kernels=n_kernels))
 
         self.cls = nn.Sequential(
             nn.Linear(hiddens[-1], n_classes),
@@ -360,4 +361,3 @@ class MoNet(nn.Module):
         for i, layer in enumerate(self.layers):
             h = layer(g, h)
         return h
-

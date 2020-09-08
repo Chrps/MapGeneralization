@@ -1,7 +1,6 @@
 import os
 import networkx as nx
 import dgl
-from dgl import DGLGraph
 import torch
 import numpy as np
 from src.deepwalk.deepwalk import DeepWalk
@@ -86,9 +85,9 @@ def calculate_angles_and_length(nxg):
             nxg.nodes[node]['min_length'] = length_min
 
 
-def group_graphs_labels_features(data_list, folder, windowing=False):
+def group_labels_features(data_root, data_list, windowing=False):
     data_path = 'data/' # m: comment out
-    data_files = [os.path.join(data_path, folder, line.rstrip()) for line in open(data_list)]
+    data_files = [line.rstrip() for line in open(os.path.join(data_root, data_list))]
 
     # Initialize empty list
     dataset = []
@@ -96,7 +95,7 @@ def group_graphs_labels_features(data_list, folder, windowing=False):
     #print("loading {} files".format(len(data_files))) # m
     for idx, file in enumerate(data_files):
         graph = []
-        nxg = nx.read_gpickle(file)
+        nxg = nx.read_gpickle(os.path.join(data_root, file))
 
 
         # Get the annotated labels
@@ -104,9 +103,7 @@ def group_graphs_labels_features(data_list, folder, windowing=False):
         # Get the feature from the file
         features = chris_get_features(nxg)
 
-        #dgl_g = DGLGraph()
-        dgl_g = dgl.from_networkx(nxg)
-        #dgl_g.readonly()
+        dgl_g  = dgl.from_networkx(nxg)
 
         # Append the information for batching
         graph.append(dgl_g)
@@ -117,8 +114,8 @@ def group_graphs_labels_features(data_list, folder, windowing=False):
     return dataset
 
 
-
-def batch_graphs(data_list, folder, windowing=False):
+def batch_graphs(data_root, data_list, windowing=False):
+    data_files = [line.rstrip() for line in open(os.path.join(data_root, data_list))]
     data_path = 'data/' # m: comment out
     data_files = [os.path.join(data_path, folder, line.rstrip()) for line in open(data_list)]
     #data_files = [line.rstrip() for line in open(os.path.join(data_root, data_list))] # m
@@ -130,7 +127,7 @@ def batch_graphs(data_list, folder, windowing=False):
     for file in data_files:
         # Convert the gpickle file to a dgl graph for batching
         #dgl_g = convert_gpickle_to_dgl_graph(file)
-        nxg = nx.read_gpickle(file)
+        nxg = nx.read_gpickle(os.path.join(data_root, file))
 
         if windowing:
             nxg_list = sliding_window.perform_windowing(nxg)
@@ -140,9 +137,7 @@ def batch_graphs(data_list, folder, windowing=False):
                 # Get the feature from the file
                 features = chris_get_features(nxg)
 
-                #dgl_g = DGLGraph()
-                #dgl_g.from_networkx(nxg)
-                #"dgl_g.readonly()
+                dgl_g  = dgl.from_networkx(nxg)
                 dgl_g  = dgl.from_networkx(nxg)
 
                 # Append the information for batching
@@ -155,9 +150,7 @@ def batch_graphs(data_list, folder, windowing=False):
             # Get the feature from the file
             features = chris_get_features(nxg)
 
-            #dgl_g = DGLGraph()
-            #dgl_g.from_networkx(nxg)
-            #dgl_g.readonly()
+            dgl_g  = dgl.from_networkx(nxg)
             dgl_g  = dgl.from_networkx(nxg)
 
             # Append the information for batching
@@ -191,9 +184,7 @@ def get_labels(nxg):
 def convert_gpickle_to_dgl_graph(file):
     nxg = nx.read_gpickle(file)
     # Define DGL graph from netx graph
-    #dgl_g = DGLGraph()
-    #dgl_g.from_networkx(nxg)
-    #dgl_g.readonly()
+    dgl_g  = dgl.from_networkx(nxg)
     #dgl_g = DGLGraph()
     dgl_g = dgl.from_networkx(nxg)
     #dgl_g.readonly()    
@@ -261,9 +252,7 @@ def chris_get_features(nxg):
     norm_positions = torch.FloatTensor(norm_positions)
 
     # % Normalized node degree (number of edges connected to node)
-    #dgl_g = DGLGraph()
-    #dgl_g.from_networkx(nxg)
-    #dgl_g.readonly()
+    dgl_g  = dgl.from_networkx(nxg)
     #tmp = DGLGraph()
     dgl_g = dgl.from_networkx(nxg)
     #dgl_g.readonly()  

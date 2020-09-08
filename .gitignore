@@ -124,15 +124,15 @@ venv.bak/
 
 # text
 *.txt
-!requirements.txt
-data/data/backup/scaled_graph_annotations/AU/A1322PE-0_w_annotations.gpickle
-data/data/backup/scaled_graph_annotations/AU/A1322PE-0_w_annotations.npy
-data/data/backup/scaled_graph_annotations/AU/A1324PE-1_w_annotations.gpickle
-data/data/backup/scaled_graph_annotations/AU/A1324PE-1_w_annotations.npy
-data/data/backup/scaled_graph_annotations/AU/A1325PE_0_w_annotations.gpickle
-data/data/backup/scaled_graph_annotations/AU/A1325PE_0_w_annotations.npy
-data/data/backup/scaled_graph_annotations/AU/A1325PE_1_w_annotations.gpickle
-data/data/backup/scaled_graph_annotations/AU/A1325PE_1_w_annotations.npy
+
+# training logs
+
+lightning_logs/
+data/Private/
+trained_models/
+*.ckpt
+wandb/
+
 data/data/backup/scaled_graph_annotations/AU/A1325PE_2_w_annotations.gpickle
 data/data/backup/scaled_graph_annotations/AU/A1325PE_2_w_annotations.npy
 data/data/backup/scaled_graph_annotations/AU/A1325PE_3_w_annotations.gpickle

@@ -463,7 +463,7 @@ class DxfReader:
         if save:
             file_name = os.path.basename(self.dxf_file_path)
             file_name = os.path.splitext(file_name)[0]
-            nx.write_gpickle(self.G, out_folder + "\\" + file_name + ".gpickle")
+            nx.write_gpickle(self.G, os.path.join(out_folder,file_name+".gpickle"))
             #nx.write_gexf(self.G, "data/graphs/test_graph.gexf")
             #nx.read_gexf("data/graphds/test_graph.gexf")
 

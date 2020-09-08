@@ -7,14 +7,14 @@ import src.models as models
 import os
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data-path', type=str, default=r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper')
-parser.add_argument('--evaluate-path', type=str, default='train_list_tmp.txt')
-parser.add_argument('--model-path', type=str, default='models/gat_20-06-10_14-37-22_beast')
+parser.add_argument('--data-path', type=str, default='data/public')
+parser.add_argument('--evaluate-path', type=str, default='test_list.txt')
+parser.add_argument('--model-path', type=str, default='gat_20-05-22_19-04-14_final')
 args = parser.parse_args()
 
 
 def load_model_txt(model_path_):
-    model_txt = model_path_ + '/predict_info.txt'
+    model_txt = 'trained_models/' + model_path_ + '/predict_info.txt'
     data = [line.rstrip() for line in open(model_txt)]
 
     # network train on ()
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     model = trained_net(n_features,
                         n_classes,
                         *config['extra_args'])
-    model_state = model_path + '/model.pth'
+    model_state = 'trained_models/' + model_path + '/model.pth'
     model.load_state_dict(torch.load(model_state))
 
     print(evaluate_path)

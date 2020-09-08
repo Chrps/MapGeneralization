@@ -1,12 +1,73 @@
-# MapGeneralization
-Generalizing Doors in Technical Drawings using Graph Neutral Networks
+# Generalizing Doors in Technical Drawings using Graph Neural Networks
+By Christoffer P. Simonsen, Frederik M. Thiesson, Mark P. Philipsen, and Thomas B. Moeslund
 
-## Pipeline
-**DXF -> Line data -> Graph:** Use DxfReader.extract_data() to create line data and DxfReader.convert_data_to_graph() to convert it to a graph - see main.py  
-**Annotate graphs:** Use annotation_tool.py to annotate the graphs    
-**Train graph node classifiation:** Use train.py to train a model. Configure model using config.py  
-**Predict graph node classes, instance and generalize:** Use predict_w_generalize.py  
-**Just predict graph node classes:** Use predict.py. However this file is deprecated!! Change predict_w_generalize.py to just predict instead.  
+[2020/06/17: Master thesis defense & project ended]
 
-## Note
-**Be sure to change the paths in the files!**
+[2020/08/27: Paper submitted & public data/code/models available]
+
+## Introduction
+
+This repository contains the code & links to annotation data for our WACV 2021 paper: ['Generalizing Doors in Technical Drawings using Graph Neural Networks'](https://arxiv.org/abs/xxx). Here, we present a new method for recognizing floor plan elements by constructing graphs from the primitives in dxf files and performing node classifiation using Graph Neural Networks.
+
+## Requirements
+
+- OpenCV
+- Python 3
+- pip3 torch pytorch-lightning ezdxf
+
+sudo apt-get install python3-tk
+
+Our code has been tested using torch==1.5.1 & pytorch-lightning==0.8.3 on a Threadripper 2950x and Nvidia 2060 GPU machine with CUDA 10.0 installed.
+
+## Data
+
+Our pubic dataset will be available [here](https://vap.aau.dk/). We suggest unpacking the zip fiels in the [data/](data/) directory. The dataset consists of all of the tools and files shown in Figure 
+
+
+![dataset_creation_and_content](figs/dataset_creation_and_content.png)
+
+The data is available as the original dxf files and as ready to use labeled graphs stored as xx files.
+
+**DXF -> Line data -> Graph:** To extract graphs from dxf files use DxfReader.extract_data() to create line data and DxfReader.convert_data_to_graph() to convert it to a graph - see main.py
+
+**Annotate graphs:** Use annotation_tool.py to annotate the graphs or use our annotations in [/data/labels](/data/labels)
+
+**Normalize graphs:** Use xx.py to scale the graphs and labels to a normalized scale.
+
+## Usage
+
+**Try network**
+
+A pre-trained model can be downloaded using the script in [/trained_models](/trained_models). Use mode flag to decide whether to perform "node" or "element" prediction.
+
+```bash
+python predict.py --mode=node --graph=test.npy
+```
+
+**Train network**
+
+Configure model in config.py  
+
+```bash
+python main.py
+```
+
+**Evaluate predictions**
+
+Performs both node- and element level evaluation.
+
+```bash
+python eval.py --mode=node --model=/trained_models/model.pt
+```
+
+## Citation
+
+Please consider citing:
+
+TODO: upload to arxiv
+---
+
+---
+
+Convert to png
+https://askubuntu.com/questions/612169/can-i-convert-a-dxf-to-png-or-jpg-with-a-command-tool

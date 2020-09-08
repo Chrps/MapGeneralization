@@ -6,8 +6,14 @@ RGCN_CONFIG = {
     'weight_decay': 5e-4,
 }
 
+#MoNet_CONFIG = {
+#    'extra_args': [10, [32, 64, 128, 256]],
+#    'lr': 1e-3,
+#    'weight_decay': 5e-6,
+#}
+
 MoNet_CONFIG = {
-    'extra_args': [10, [32, 64, 128, 256]],
+    'extra_args': [10, 10, [32, 64, 128, 256]],
     'lr': 1e-3,
     'weight_decay': 5e-6,
 }
@@ -49,9 +55,9 @@ AGNN_CONFIG = {
 }
 
 SGC_CONFIG = {
-    'extra_args': [None, 2, False],
-    'lr': 0.2,
-    'weight_decay': 5e-6,
+    'extra_args': [2, True],
+    'lr': 1e-2,
+    'weight_decay': 5e-4,
 }
 
 GIN_CONFIG = {
@@ -61,7 +67,7 @@ GIN_CONFIG = {
 }
 
 CHEBNET_CONFIG = {
-    'extra_args': [16, 16, 2, True],
+    'extra_args': [8, 8, 1, F.relu, True],
     'lr': 1e-3,
     'weight_decay': 5e-4,
 }
