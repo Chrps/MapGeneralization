@@ -87,12 +87,13 @@ def calculate_angles_and_length(nxg):
 
 
 def group_graphs_labels_features(data_list, folder, windowing=False):
-    data_path = 'data/'
+    data_path = 'data/' # m: comment out
     data_files = [os.path.join(data_path, folder, line.rstrip()) for line in open(data_list)]
 
     # Initialize empty list
     dataset = []
 
+    #print("loading {} files".format(len(data_files))) # m
     for idx, file in enumerate(data_files):
         graph = []
         nxg = nx.read_gpickle(file)
@@ -103,9 +104,9 @@ def group_graphs_labels_features(data_list, folder, windowing=False):
         # Get the feature from the file
         features = chris_get_features(nxg)
 
-        dgl_g = DGLGraph()
-        dgl_g.from_networkx(nxg)
-        dgl_g.readonly()
+        #dgl_g = DGLGraph()
+        dgl_g = dgl.from_networkx(nxg)
+        #dgl_g.readonly()
 
         # Append the information for batching
         graph.append(dgl_g)
@@ -118,8 +119,9 @@ def group_graphs_labels_features(data_list, folder, windowing=False):
 
 
 def batch_graphs(data_list, folder, windowing=False):
-    data_path = 'data/'
+    data_path = 'data/' # m: comment out
     data_files = [os.path.join(data_path, folder, line.rstrip()) for line in open(data_list)]
+    #data_files = [line.rstrip() for line in open(os.path.join(data_root, data_list))] # m
 
     all_graphs = []
     all_labels = []
@@ -138,9 +140,10 @@ def batch_graphs(data_list, folder, windowing=False):
                 # Get the feature from the file
                 features = chris_get_features(nxg)
 
-                dgl_g = DGLGraph()
-                dgl_g.from_networkx(nxg)
-                dgl_g.readonly()
+                #dgl_g = DGLGraph()
+                #dgl_g.from_networkx(nxg)
+                #"dgl_g.readonly()
+                dgl_g  = dgl.from_networkx(nxg)
 
                 # Append the information for batching
                 all_graphs.append(dgl_g)
@@ -152,9 +155,10 @@ def batch_graphs(data_list, folder, windowing=False):
             # Get the feature from the file
             features = chris_get_features(nxg)
 
-            dgl_g = DGLGraph()
-            dgl_g.from_networkx(nxg)
-            dgl_g.readonly()
+            #dgl_g = DGLGraph()
+            #dgl_g.from_networkx(nxg)
+            #dgl_g.readonly()
+            dgl_g  = dgl.from_networkx(nxg)
 
             # Append the information for batching
             all_graphs.append(dgl_g)
@@ -187,9 +191,12 @@ def get_labels(nxg):
 def convert_gpickle_to_dgl_graph(file):
     nxg = nx.read_gpickle(file)
     # Define DGL graph from netx graph
-    dgl_g = DGLGraph()
-    dgl_g.from_networkx(nxg)
-    dgl_g.readonly()
+    #dgl_g = DGLGraph()
+    #dgl_g.from_networkx(nxg)
+    #dgl_g.readonly()
+    #dgl_g = DGLGraph()
+    dgl_g = dgl.from_networkx(nxg)
+    #dgl_g.readonly()    
 
     return dgl_g
 
@@ -254,9 +261,12 @@ def chris_get_features(nxg):
     norm_positions = torch.FloatTensor(norm_positions)
 
     # % Normalized node degree (number of edges connected to node)
-    dgl_g = DGLGraph()
-    dgl_g.from_networkx(nxg)
-    dgl_g.readonly()
+    #dgl_g = DGLGraph()
+    #dgl_g.from_networkx(nxg)
+    #dgl_g.readonly()
+    #tmp = DGLGraph()
+    dgl_g = dgl.from_networkx(nxg)
+    #dgl_g.readonly()  
     norm_degrees = 1. / dgl_g.in_degrees().float().unsqueeze(1)
 
     # % Normalized unique identity (entity type [ARC/CRCLE/LINE])
@@ -312,7 +322,7 @@ def chris_get_features(nxg):
     # % Combine all features into one tensor
     #features = torch.cat((norm_positions, norm_deg, norm_ids, embedding_feat), 1)
     features = torch.cat((norm_degrees, max_angle, min_angle, max_length, min_length), 1)
-    #features = torch.cat((norm_degrees, angles, lengths), 1)
+    # features = torch.cat((norm_degrees, angles, lengths), 1)
 
     return features
 

@@ -11,9 +11,9 @@ from itertools import count
 from sklearn.cluster import DBSCAN
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data-path', type=str, default=r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper')
+parser.add_argument('--data-path', type=str, default=r'C:\Users\jahj\projects\MapGeneralization\data\data\data_for_paper')#C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper')
 parser.add_argument('--predict-path', type=str, default='test_list.txt')
-parser.add_argument('--model_name', type=str, default='gat_20-06-10_14-37-22_beast')
+parser.add_argument('--model_name', type=str, default='gat_20-06-10_14-37-22_beast')# gat_20-05-22_19-04-14_final')#
 
 args = parser.parse_args()
 
@@ -21,6 +21,8 @@ args = parser.parse_args()
 def load_model_txt(model_name):
     model_txt = 'models/' + model_name + '/predict_info.txt'
     data = [line.rstrip() for line in open(model_txt)]
+
+    print(data)
 
     # network train on ()
     net = data[0]
@@ -61,7 +63,7 @@ def draw_inst(nx_G, ax, positions):
 
 
 
-def post_processing(nxg_, predictions_):
+def post_processing(nxg_, predictions_): # heuristics
 
     # Graph morphology closing
     predictions_alt = []
@@ -515,7 +517,7 @@ def predict(data_path, predict_path, model_name):
         inliers = reject_outliers_hardcoded(area_list, width_list, height_list, ratio_list)
         selected_graphs = [selected_graphs[i] for i in inliers]
 
-        print('Numer of doors: %d' % len(selected_graphs))
+        print('Number of suggested doors: %d' % len(selected_graphs))
 
         seleted_graphs_joined = nx.Graph()
 
