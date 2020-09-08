@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04
 
 LABEL maintainer "Mark - Auto generated"
 
@@ -22,13 +22,13 @@ RUN pip3 --no-cache-dir install --upgrade \
 RUN pip3 install torch torchvision
 
 # Install Deep Graph Library (DGL)
-RUN pip3 install dgl==0.5.1
+RUN pip3 install --pre dgl-cu102
 ENV DGLBACKEND=pytorch
 
 # Install pytorch-lightning
 RUN pip3 install pytorch-lightning
 
-# Install misc
+# Install misc 
 RUN pip3 install sklearn gensim pyyaml
 
 RUN rm -rf /var/lib/apt/lists/*

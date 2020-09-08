@@ -94,7 +94,7 @@ class LightningNodeClassifier(pl.LightningModule):
         return {'loss': loss}
 
     def training_epoch_end(self, outputs):
-        loss = torch.stack([x['batch_loss'] for x in outputs]).mean()
+        loss = torch.stack([x['loss'] for x in outputs]).mean()
         tensorboard_logs = {'train_loss': loss}
         return {'train_loss': loss, 'log': tensorboard_logs}
 

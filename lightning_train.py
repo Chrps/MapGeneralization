@@ -37,7 +37,7 @@ if __name__ == '__main__':
     trainer = pl.Trainer(gpus=hparams['gpus'],
                          max_epochs=1000,
                          logger=logger,
-                         default_save_path='trained_models/')
+                         default_root_dir='trained_models/')
 
     from lightning_model import LightningNodeClassifier
     model = LightningNodeClassifier(hparams)

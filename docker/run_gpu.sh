@@ -3,6 +3,7 @@
 
 xhost +local:
 docker run -it --net=host \
+  --gpus all \
   --volume=/dev:/dev \
   --name=dockermapspeople \
   --workdir=/home/$USER \
