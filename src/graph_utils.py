@@ -116,9 +116,6 @@ def group_labels_features(data_root, data_list, windowing=False):
 
 def batch_graphs(data_root, data_list, windowing=False):
     data_files = [line.rstrip() for line in open(os.path.join(data_root, data_list))]
-    data_path = 'data/' # m: comment out
-    data_files = [os.path.join(data_path, folder, line.rstrip()) for line in open(data_list)]
-    #data_files = [line.rstrip() for line in open(os.path.join(data_root, data_list))] # m
 
     all_graphs = []
     all_labels = []
@@ -126,7 +123,6 @@ def batch_graphs(data_root, data_list, windowing=False):
 
     for file in data_files:
         # Convert the gpickle file to a dgl graph for batching
-        #dgl_g = convert_gpickle_to_dgl_graph(file)
         nxg = nx.read_gpickle(os.path.join(data_root, file))
 
         if windowing:
@@ -137,7 +133,6 @@ def batch_graphs(data_root, data_list, windowing=False):
                 # Get the feature from the file
                 features = chris_get_features(nxg)
 
-                dgl_g  = dgl.from_networkx(nxg)
                 dgl_g  = dgl.from_networkx(nxg)
 
                 # Append the information for batching
@@ -150,7 +145,6 @@ def batch_graphs(data_root, data_list, windowing=False):
             # Get the feature from the file
             features = chris_get_features(nxg)
 
-            dgl_g  = dgl.from_networkx(nxg)
             dgl_g  = dgl.from_networkx(nxg)
 
             # Append the information for batching
@@ -253,9 +247,7 @@ def chris_get_features(nxg):
 
     # % Normalized node degree (number of edges connected to node)
     dgl_g  = dgl.from_networkx(nxg)
-    #tmp = DGLGraph()
-    dgl_g = dgl.from_networkx(nxg)
-    #dgl_g.readonly()  
+
     norm_degrees = 1. / dgl_g.in_degrees().float().unsqueeze(1)
 
     # % Normalized unique identity (entity type [ARC/CRCLE/LINE])

@@ -13,8 +13,8 @@ from sklearn.metrics import balanced_accuracy_score
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--desired_net', type=str, default='sgc')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, sgc # broken: chebnet, monet, 
-parser.add_argument('--num-epochs', type=int, default=250)
+parser.add_argument('--desired_net', type=str, default='gat')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, sgc # broken: chebnet, monet, 
+parser.add_argument('--num-epochs', type=int, default=1000)
 parser.add_argument('--batch-size', type=int, default=5)
 parser.add_argument('--data-path', type=str, default='data/Public')
 parser.add_argument('--train-file', type=str, default='train_list.txt')
@@ -182,6 +182,7 @@ def train(desired_net, num_epochs, data_path, train_file, valid_file, num_classe
     best_acc_score = 0.0
 
     print('\n --- BEGIN TRAINING ---')
+    print('\n Epochs:', num_epochs)
     start_date = datetime.datetime.now()
 
     for epoch in range(num_epochs):
@@ -210,7 +211,7 @@ def train(desired_net, num_epochs, data_path, train_file, valid_file, num_classe
             # Evaluate model
             overall_acc, non_door_acc, door_acc = evaluate(model, valid_g, valid_features, valid_labels)
 
-            if epoch > 30 and best_acc_score < overall_acc:
+            if epoch > 5 and best_acc_score < overall_acc:
                 best_acc_score = overall_acc
                 save_model(model, epoch, desired_net, n_features, num_classes, start_date, overall_acc)
             print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Overall Acc {:.4f} |"
