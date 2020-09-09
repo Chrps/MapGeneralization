@@ -72,12 +72,14 @@ if __name__ == '__main__':
         trainer = pl.Trainer(gpus=hparams['gpus'],
                              max_epochs=hparams['n_epochs'],
                              logger=wandb_logger,
+                             default_root_dir='trained_models/',
                              checkpoint_callback=None) #chpt_callback
     else:
         logger = pl.loggers.TensorBoardLogger('lightning_logs/{}'.format(exp_name))
         trainer = pl.Trainer(gpus=hparams['gpus'],
                              max_epochs=hparams['n_epochs'],
                              logger=logger,
+                             default_root_dir='trained_models/',
                              checkpoint_callback=None) #chpt_callback
 
     from lightning_model import LightningNodeClassifier
