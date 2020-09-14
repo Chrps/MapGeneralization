@@ -12,7 +12,7 @@ def norm_ang(angle):
     old_max = 180
     old_min = -180
     new_max = 1
-    new_min = 0
+    new_min = -1 #0
     old_range = old_max - old_min
     new_range = new_max - new_min
     out_angle = (((angle - old_min) * new_range) / old_range) + new_min
@@ -41,7 +41,7 @@ def calculate_angles_and_length(nxg):
             nxg.edges[edge]['length'] = 0
         else:
             norm_length = 1/length
-            nxg.edges[edge]['length'] = norm_length
+            nxg.edges[edge]['length'] = np.abs(np.log(norm_length))/10.0
 
     # Calculate mean angle for all edges going to node.
     for node in nxg.nodes:
@@ -178,10 +178,7 @@ def get_labels(nxg):
 def convert_gpickle_to_dgl_graph(file):
     nxg = nx.read_gpickle(file)
     # Define DGL graph from netx graph
-    dgl_g  = dgl.from_networkx(nxg)
-    #dgl_g = DGLGraph()
-    dgl_g = dgl.from_networkx(nxg)
-    #dgl_g.readonly()    
+    dgl_g  = dgl.from_networkx(nxg)   
 
     return dgl_g
 

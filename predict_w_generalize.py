@@ -11,9 +11,9 @@ from itertools import count
 from sklearn.cluster import DBSCAN
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data-path', type=str, default=r'C:\Users\jahj\projects\MapGeneralization\data\data\data_for_paper')#C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper')
+parser.add_argument('--data-path', type=str, default=r'data/Public')#'C:\Users\jahj\projects\MapGeneralization\data\data\data_for_paper')#C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper')
 parser.add_argument('--predict-path', type=str, default='test_list.txt')
-parser.add_argument('--model_name', type=str, default='gat_20-06-10_14-37-22_beast')# gat_20-05-22_19-04-14_final')#
+parser.add_argument('--model_name', type=str, default='gat_20-09-14_12-35-46_pm1')#gat_20-06-10_14-37-22_beast')# gat_20-09-09_09-43-31_5features')#gat_20-05-22_19-04-14_final')#
 
 args = parser.parse_args()
 
@@ -415,7 +415,7 @@ def predict(data_path, predict_path, model_name):
                         *config['extra_args'])
     model_path = 'trained_models/' + model_name + '/model.pth'
     model.load_state_dict(torch.load(model_path))
-    print(model)
+    #print(model)
 
     # Get the list of files for prediction
     pred_files = [os.path.join(data_path, line.rstrip()) for line in open(os.path.join(data_path, predict_path))]
@@ -517,7 +517,7 @@ def predict(data_path, predict_path, model_name):
         inliers = reject_outliers_hardcoded(area_list, width_list, height_list, ratio_list)
         selected_graphs = [selected_graphs[i] for i in inliers]
 
-        print('Number of suggested doors: %d' % len(selected_graphs))
+        print('Number of suggested doors: %d\n in file: ' % len(selected_graphs))# %file)
 
         seleted_graphs_joined = nx.Graph()
 
