@@ -7,7 +7,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 
 import wandb
-os.environ["WANDB_API_KEY"] = 'ef5a53f78faf2e2ebc938760e84e3b7ad38fb28c'
+os.environ["WANDB_API_KEY"] = '0ea265928f97057d48eca8a9501e9a078402ccc1' #ef5a53f78faf2e2ebc938760e84e3b7ad38fb28c'
 
 from lightning_callbacks import chpt_callback
 
