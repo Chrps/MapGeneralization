@@ -150,26 +150,35 @@ def collate(samples):
 
 def train(desired_net, num_epochs, data_path, train_file, valid_file, num_classes, windowing, batch_size):
     # Retrieve dataset and prepare it for DataLoader
-    trainset = graph_utils.group_labels_features(data_path, train_file, windowing=windowing)
-    data_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True,
-                             num_workers=0, collate_fn=collate)
-    print("data_loader is producing {} bathces with size {}".format(len(data_loader),batch_size))
+    trainset = graph_utils.group_labels_features(   data_path, 
+                                                    train_file, 
+                                                    windowing=windowing)
+    data_loader = DataLoader(   trainset, 
+                                batch_size=batch_size, 
+                                shuffle=True,
+                                num_workers=0, 
+                                collate_fn=collate)
+
+    print("data_loader is producing {} batches with size {}".format(len(data_loader),batch_size))
 
     # Load the validation data
-    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(data_path, valid_file, windowing=windowing)
+    valid_g, valid_labels, valid_features = graph_utils.batch_graphs(   data_path, 
+                                                                        valid_file, 
+                                                                        windowing=windowing)
 
     # create user specified model
     n_features = trainset[0][2].shape[1]  # number of features is same throughout, so just get shape of first graph
     net, config = models.get_model_and_config(desired_net)
-    model = net(n_features,
-                num_classes,
-                *config['extra_args'])
+
+    model = net(    n_features,
+                    num_classes,
+                    *config['extra_args'])
     #print(model)
 
     # Define optimizer
-    optimizer = torch.optim.Adam(model.parameters(),
-                                 lr=config['lr'],
-                                 weight_decay=config['weight_decay'])
+    optimizer = torch.optim.Adam(   model.parameters(),
+                                    lr=config['lr'],
+                                    weight_decay=config['weight_decay'])
 
     # initialize graph
     dur = []
