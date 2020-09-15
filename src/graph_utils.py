@@ -42,6 +42,9 @@ def calculate_angles_and_length(nxg):
         else:
             norm_length = 1/length
             nxg.edges[edge]['length'] = np.abs(np.log(norm_length))/10.0
+        
+        #length=length+1.0
+        #nxg.edges[edge]['length'] = np.abs(np.log(length))/10.0 # for 20: 1e9 is scaled to 1.
 
     # Calculate mean angle for all edges going to node.
     for node in nxg.nodes:
@@ -51,6 +54,8 @@ def calculate_angles_and_length(nxg):
         angle_min = 0
         length_max = 0
         length_min = 0
+        tmp_prev_edge_angle = 0
+
         for edge_idx, edge in enumerate(nxg.edges(node)):
             if edge_idx == 0:
                 angle_max = nxg.edges[edge]['angle']
@@ -58,9 +63,9 @@ def calculate_angles_and_length(nxg):
                 length_max = nxg.edges[edge]['length']
                 length_min = nxg.edges[edge]['length']
             else:
-                if nxg.edges[edge]['angle'] > angle_max:
+                if np.abs(nxg.edges[edge]['angle']) > np.abs(angle_max):
                     angle_max = nxg.edges[edge]['angle']
-                if nxg.edges[edge]['angle'] < angle_min:
+                if np.abs(nxg.edges[edge]['angle']) < np.abs(angle_min):
                     angle_min = nxg.edges[edge]['angle']
                 if nxg.edges[edge]['length'] > length_max:
                     length_max = nxg.edges[edge]['length']
@@ -84,6 +89,21 @@ def calculate_angles_and_length(nxg):
             nxg.nodes[node]['max_length'] = length_max
             nxg.nodes[node]['min_length'] = length_min
 
+    # maximum difference angle
+    for node_ndx, node in enumerate(nxg.nodes):
+        diff_angle = 0.0
+        if node == 0:
+            prev_edge_angle = 0.0
+        else:  
+            for edge_idx, edge in enumerate(nxg.edges(node)):
+                if np.abs( nxg.edges[edge]['angle']-prev_edge_angle ) > np.abs(diff_angle) :
+                    diff_angle = nxg.edges[edge]['angle']-prev_edge_angle
+                    tmp_prev_edge_angle = nxg.edges[edge]['angle']
+            prev_edge_angle = tmp_prev_edge_angle
+        if len(nxg.edges(node)) == 0:
+            nxg.nodes[node]['diff_angle'] = 0
+        else:
+            nxg.nodes[node]['diff_angle'] = diff_angle
 
 def group_labels_features(data_root, data_list, windowing=False):
     data_path = 'data/' # m: comment out
@@ -290,6 +310,10 @@ def chris_get_features(nxg):
     min_length = list(min_length.values())
     min_length = torch.FloatTensor(np.asarray(min_length).reshape(-1, 1))
 
+    diff_angle = nx.get_node_attributes(nxg, 'diff_angle')
+    diff_angle = list(diff_angle.values())
+    diff_angle = torch.FloatTensor(np.asarray(diff_angle).reshape(-1, 1))
+
     # % DeepWalk
     #dpwlk = DeepWalk(number_walks=4, walk_length=5, representation_size=2)
     # Create embedding file for given file
@@ -299,7 +323,7 @@ def chris_get_features(nxg):
 
     # % Combine all features into one tensor
     #features = torch.cat((norm_positions, norm_deg, norm_ids, embedding_feat), 1)
-    features = torch.cat((norm_degrees, max_angle, min_angle, max_length, min_length), 1)
+    features = torch.cat((norm_degrees, diff_angle, min_angle, max_length, min_length), 1)
     # features = torch.cat((norm_degrees, angles, lengths), 1)
 
     return features
