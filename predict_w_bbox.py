@@ -11,9 +11,9 @@ from itertools import count
 from sklearn.cluster import DBSCAN
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data-path', type=str, default='data/public')
+parser.add_argument('--data-path', type=str, default='data/Public')
 parser.add_argument('--predict-path', type=str, default='test_list.txt')
-parser.add_argument('--model_name', type=str, default='gat_20-05-22_19-04-14_final')
+parser.add_argument('--model_name', type=str, default='gcn_20-09-08_17-52-27')
 
 args = parser.parse_args()
 

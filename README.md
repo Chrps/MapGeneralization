@@ -21,7 +21,7 @@ Our code has been tested using torch==1.5.1 & pytorch-lightning==0.8.3 on a Thre
 
 ## Data
 
-Our pubic dataset will be available [here](https://vap.aau.dk/). We suggest unpacking the zip fiels in the [data/](data/) directory. The dataset consists of all of the tools and files shown in Figure 
+Our pubic dataset will be available [here](https://vap.aau.dk/). We suggest unpacking the zip fiels in the [data/](data/) directory. The dataset consists of all of the tools and files shown in Figure
 
 
 ![dataset_creation_and_content](figs/dataset_creation_and_content.png)
@@ -33,6 +33,17 @@ The data is available as the original dxf files and as ready to use labeled grap
 **Annotate graphs:** Use annotation_tool.py to annotate the graphs or use our annotations in [/data/labels](/data/labels)
 
 **Normalize graphs:** Use xx.py to scale the graphs and labels to a normalized scale.
+
+**Convert to png:**
+from https://askubuntu.com/questions/612169/can-i-convert-a-dxf-to-png-or-jpg-with-a-command-tool
+
+sudo apt install libreoffice texlive-extra-utils
+
+- libreoffice --headless --convert-to pdf A1322PE-0.dxf
+- pdfcrop A1322PE-0.pdf
+- gs -sDEVICE=png16m -dNOPAUSE -dBATCH -dSAFER -sOutputFile=A1322PE-0.png A1322PE-0-crop.pdf
+
+or use dxf2png.py -l <list_of_dxf_files>.txt
 
 ## Usage
 
@@ -68,6 +79,3 @@ TODO: upload to arxiv
 ---
 
 ---
-
-Convert to png
-https://askubuntu.com/questions/612169/can-i-convert-a-dxf-to-png-or-jpg-with-a-command-tool
