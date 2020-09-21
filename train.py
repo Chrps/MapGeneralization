@@ -132,7 +132,8 @@ def save_model(model, epoch, desired_net, n_features, num_classes, start_date, o
         model_txt.write('Number of Features: ' + str(n_features) + '\n')
         model_txt.write('Number of Classes: ' + str(num_classes) + '\n')
         model_txt.write('Saved at Epoch: ' + str(epoch) + '\n')
-        model_txt.write('Accuracy: %.2f' % overall_acc)
+        model_txt.write('Accuracy: %.2f\n' % overall_acc)
+        model_txt.write('Feature specs: norm_degrees, min_diff_angle, max_diff_angle, max_length_log_ratio, min_length_log_ratio')
 
 
 def collate(samples):

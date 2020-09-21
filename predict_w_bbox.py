@@ -197,7 +197,7 @@ def predict(data_path, predict_path, model_name):
         dgl_g = graph_utils.convert_gpickle_to_dgl_graph(file)
         # Get the features from the given graph
         nxg = nx.read_gpickle(file)
-        features = graph_utils.chris_get_features(nxg)
+        features = graph_utils.extract_features(nxg)
 
         model.eval()
         with torch.no_grad():
