@@ -14,7 +14,7 @@ from sklearn.metrics import balanced_accuracy_score
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--desired_net', type=str, default='gat')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, sgc # broken: chebnet, monet, 
-parser.add_argument('--num-epochs', type=int, default=1000)
+parser.add_argument('--num-epochs', type=int, default=2000)
 parser.add_argument('--batch-size', type=int, default=5)
 parser.add_argument('--data-path', type=str, default='data/Public')
 parser.add_argument('--train-file', type=str, default='train_list.txt')
@@ -224,8 +224,8 @@ def train(desired_net, num_epochs, data_path, train_file, valid_file, num_classe
             if epoch > 5 and best_acc_score < overall_acc:
                 best_acc_score = overall_acc
                 save_model(model, epoch, desired_net, n_features, num_classes, start_date, overall_acc)
-            print("Epoch {:05d} | Loss {:.4f} | Door Acc {:.4f} | Non-Door Acc {:.4f} | Overall Acc {:.4f} |"
-                  "Pr. Epoch Time(s) {:.4f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
+            print("Epoch {:05d} | Loss {:.3f} | Door Acc {:.3f} | Non-Door Acc {:.3f} | Overall Acc {:.3f} |"
+                  "Pr. Epoch Time(s) {:.3f}".format(epoch, loss.item(), door_acc, non_door_acc, overall_acc, np.mean(dur)))
 
         overall_acc_list.append(overall_acc)
         non_door_acc_list.append(non_door_acc)

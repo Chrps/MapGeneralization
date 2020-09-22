@@ -93,6 +93,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+pytorch_env/
 
 # Spyder project settings
 .spyderproject
@@ -134,3 +135,4 @@ trained_models/
 wandb/
 
 data/data/
+data_old/
