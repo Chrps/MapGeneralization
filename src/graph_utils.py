@@ -1,4 +1,6 @@
 import os
+from builtins import range
+
 import networkx as nx
 import dgl
 import torch
@@ -7,6 +9,117 @@ from src.deepwalk.deepwalk import DeepWalk
 from src.sliding_window_class import SlidingWindow
 sliding_window = SlidingWindow()
 
+def extract_max_difference_angle(nxg):  
+    # Maximum difference angle requires that angles have been computed in advance.
+    max_diff_angle = []
+    tmp_prev_edge_angle = []
+    nx.set_node_attributes(nxg, max_diff_angle, 'max_diff_angle')
+    nx.set_edge_attributes(nxg, max_diff_angle, 'max_diff_angle')
+    for node_ndx, node in enumerate(nxg.nodes):
+        max_diff_angle = 0.0
+        if node == 0:
+            prev_edge_angle = 0.0
+        for edge_idx, edge in enumerate(nxg.edges(node)):
+            if np.abs( np.asarray(nxg.edges[edge]['angle'])-prev_edge_angle ) > np.abs(max_diff_angle) :
+                max_diff_angle = nxg.edges[edge]['angle']-prev_edge_angle
+                tmp_prev_edge_angle = nxg.edges[edge]['angle']
+        prev_edge_angle = tmp_prev_edge_angle
+        if len(nxg.edges(node)) == 0:
+            nxg.nodes[node]['max_diff_angle'] = 0
+        else:
+            nxg.nodes[node]['max_diff_angle'] = max_diff_angle
+
+def extract_min_difference_angle(nxg):  
+    # Minimum difference angle requires that angles have been computed in advance.
+    min_diff_angle = []
+    tmp_prev_edge_angle = []
+    nx.set_node_attributes(nxg, min_diff_angle, 'min_diff_angle')
+    nx.set_edge_attributes(nxg, min_diff_angle, 'min_diff_angle')
+    for node_ndx, node in enumerate(nxg.nodes):
+        if node == 0:
+            prev_edge_angle = 0.0
+        for edge_idx, edge in enumerate(nxg.edges(node)):
+            test_angle = nxg.edges[edge]['angle']
+            
+            if edge[0]-edge[1] > 0: # if minimum is in the opposite direction the subtract -0.5 (negative of angle normalization value)
+                test_angle = test_angle - 0.5
+            
+            if edge_idx==0: # initialization assumes that first difference is smallest
+                min_diff_angle = test_angle-prev_edge_angle
+                tmp_prev_edge_angle = test_angle
+
+            if np.abs( test_angle-prev_edge_angle ) < np.abs(min_diff_angle) : 
+                min_diff_angle = nxg.edges[edge]['angle']-prev_edge_angle
+                tmp_prev_edge_angle = nxg.edges[edge]['angle']
+        prev_edge_angle = tmp_prev_edge_angle
+        
+        if len(nxg.edges(node)) == 0:
+            nxg.nodes[node]['min_diff_angle'] = 0
+        else:
+            nxg.nodes[node]['min_diff_angle'] = min_diff_angle
+
+def extract_max_loglength_ratio_absolute(nxg):
+    # maximum log-length ratio (Absolute)
+    max_length_log_ratio = []
+    nx.set_node_attributes(nxg, max_length_log_ratio, 'max_length_log_ratio')
+    nx.set_edge_attributes(nxg, max_length_log_ratio, 'max_length_log_ratio')
+    for node_ndx, node in enumerate(nxg.nodes):
+        max_length_log_ratio = 0.0
+        if node == 0:
+            prev_edge_length = 0.0
+        for edge_idx, edge in enumerate(nxg.edges(node)):
+            if edge_idx==0: # initialization assumes that first difference is largest
+                max_length_log_ratio = nxg.edges[edge]['length_log']-prev_edge_length
+                tmp_prev_edge_length = nxg.edges[edge]['length_log']
+            if np.abs(nxg.edges[edge]['length_log']-prev_edge_length) > np.abs(max_length_log_ratio) : 
+                max_length_log_ratio = nxg.edges[edge]['length_log']-prev_edge_length
+                tmp_prev_edge_length = nxg.edges[edge]['length_log']
+        prev_edge_length = tmp_prev_edge_length
+
+        if len(nxg.edges(node)) == 0:
+            nxg.nodes[node]['max_length_log_ratio'] = 0
+        else:
+            nxg.nodes[node]['max_length_log_ratio'] = max_length_log_ratio
+
+
+def extract_min_loglength_ratio_absolute(nxg):
+    # Minimum Length Ratio (Absolute)
+    min_length_log_ratio = 1000000.0
+    tmp_prev_edge_length = 0.0
+    nx.set_node_attributes(nxg, min_length_log_ratio, 'min_length_log_ratio')
+    nx.set_edge_attributes(nxg, min_length_log_ratio, 'min_length_log_ratio')
+    for node_ndx, node in enumerate(nxg.nodes):
+        min_length_log_ratio = 0.0
+        if node == 0:
+            prev_edge_length = 0.0
+            nxg.nodes[node]['min_length_log_ratio'] = 0
+            # For node[0] run through full loop and find minimum length except the first edge ehich is zero
+            for edge_idx, edge in enumerate(nxg.edges(node)):
+                if (edge_idx==0): # first value at position zero is always 0. We dont want this value
+                    tmp_min = 0.0
+                if (edge_idx>0 and tmp_min>nxg.edges[edge]['length_log']): # compare to find minimum.
+                    tmp_min = nxg.edges[edge]['length_log']
+                    prev_edge_length = tmp_min
+            continue
+        
+        for edge_idx, edge in enumerate(nxg.edges(node)):
+            if edge[0]-edge[1] > 0: # if opposite node-direction then skip comparison in this iteration of loop
+                skipped = True
+                continue
+            if (edge_idx==0 or skipped==True): # initialization assumes that first ratio is smallest (same length)
+                skipped = False
+                min_length_log_ratio = nxg.edges[edge]['length_log']-prev_edge_length
+                tmp_prev_edge_length = nxg.edges[edge]['length_log']
+            if np.abs(nxg.edges[edge]['length_log']-prev_edge_length) < np.abs(min_length_log_ratio) : 
+                min_length_log_ratio = nxg.edges[edge]['length_log']-prev_edge_length
+                tmp_prev_edge_length = nxg.edges[edge]['length_log']
+
+        prev_edge_length = tmp_prev_edge_length
+
+        if len(nxg.edges(node)) == 0:
+            nxg.nodes[node]['min_length_log_ratio'] = 0
+        else:
+            nxg.nodes[node]['min_length_log_ratio'] = min_length_log_ratio
 
 def norm_ang(angle, new_max=0.5, new_min=-0.5):
     old_max = 180
@@ -23,10 +136,10 @@ def norm_ang(angle, new_max=0.5, new_min=-0.5):
 def calculate_angles_and_length(nxg):
     angles = []
     lengths_euql = []
-    max_diff_angles = []
-    min_diff_angles = []
-    min_length_log_ratio = []
-    max_length_log_ratio = []
+    # max_diff_angles = []
+    #min_diff_angles = []
+    #min_length_log_ratio = []
+    #max_length_log_ratio = []
 
     nx.set_node_attributes(nxg, angles, 'angle')
     nx.set_edge_attributes(nxg, angles, 'angle')
@@ -34,14 +147,14 @@ def calculate_angles_and_length(nxg):
     nx.set_edge_attributes(nxg, lengths_euql, 'length_euql')
     nx.set_node_attributes(nxg, lengths_euql, 'length_log')
     nx.set_edge_attributes(nxg, lengths_euql, 'length_log')
-    nx.set_node_attributes(nxg, max_diff_angles, 'max_diff_angle')
-    nx.set_edge_attributes(nxg, max_diff_angles, 'max_diff_angle')
-    nx.set_node_attributes(nxg, min_diff_angles, 'min_diff_angle')
-    nx.set_edge_attributes(nxg, min_diff_angles, 'min_diff_angle')
-    nx.set_node_attributes(nxg, min_length_log_ratio, 'min_length_log_ratio')
-    nx.set_edge_attributes(nxg, min_length_log_ratio, 'min_length_log_ratio')
-    nx.set_node_attributes(nxg, max_length_log_ratio, 'max_length_log_ratio')
-    nx.set_edge_attributes(nxg, max_length_log_ratio, 'max_length_log_ratio')
+    # nx.set_node_attributes(nxg, max_diff_angles, 'max_diff_angle')
+    # nx.set_edge_attributes(nxg, max_diff_angles, 'max_diff_angle')
+    # nx.set_node_attributes(nxg, min_diff_angles, 'min_diff_angle')
+    # nx.set_edge_attributes(nxg, min_diff_angles, 'min_diff_angle')
+    # nx.set_node_attributes(nxg, min_length_log_ratio, 'min_length_log_ratio')
+    # nx.set_edge_attributes(nxg, min_length_log_ratio, 'min_length_log_ratio')
+    # nx.set_node_attributes(nxg, max_length_log_ratio, 'max_length_log_ratio')
+    # nx.set_edge_attributes(nxg, max_length_log_ratio, 'max_length_log_ratio')
 
     # Calculate angle and distance of each edge
     for edge in nxg.edges:
@@ -57,7 +170,7 @@ def calculate_angles_and_length(nxg):
         if length_euql == 0:
             nxg.edges[edge]['length_euql'] = 0
         else:
-            nxg.edges[edge]['length_euql']  = 1/length_euql
+            nxg.edges[edge]['length_euql']  = 1.0/length_euql
         #    nxg.edges[edge]['length_euql'] = np.abs(np.log(norm_length_euql))/10.0
         
         length_euql=length_euql+1.0
@@ -118,46 +231,48 @@ def calculate_angles_and_length(nxg):
             nxg.nodes[node]['max_length_log'] = length_log_max
             nxg.nodes[node]['min_length_log'] = length_log_min
 
-    # Maximum difference angle
-    for node_ndx, node in enumerate(nxg.nodes):
-        max_diff_angle = 0.0
-        if node == 0:
-            prev_edge_angle = 0.0
-        #else:  
-        for edge_idx, edge in enumerate(nxg.edges(node)):
-            if np.abs( nxg.edges[edge]['angle']-prev_edge_angle ) > np.abs(max_diff_angle) :
-                max_diff_angle = nxg.edges[edge]['angle']-prev_edge_angle
-                tmp_prev_edge_angle = nxg.edges[edge]['angle']
-        prev_edge_angle = tmp_prev_edge_angle
-        if len(nxg.edges(node)) == 0:
-            nxg.nodes[node]['max_diff_angle'] = 0
-        else:
-            nxg.nodes[node]['max_diff_angle'] = max_diff_angle
+    # # Maximum difference angle
+    # for node_ndx, node in enumerate(nxg.nodes):
+    #     max_diff_angle = 0.0
+    #     if node == 0:
+    #         prev_edge_angle = 0.0
+    #     #else:  
+    #     for edge_idx, edge in enumerate(nxg.edges(node)):
+    #         if np.abs( nxg.edges[edge]['angle']-prev_edge_angle ) > np.abs(max_diff_angle) :
+    #             max_diff_angle = nxg.edges[edge]['angle']-prev_edge_angle
+    #             tmp_prev_edge_angle = nxg.edges[edge]['angle']
+    #     prev_edge_angle = tmp_prev_edge_angle
+    #     if len(nxg.edges(node)) == 0:
+    #         nxg.nodes[node]['max_diff_angle'] = 0
+    #     else:
+    #         nxg.nodes[node]['max_diff_angle'] = max_diff_angle
 
-    # Minimum difference angle
-    for node_ndx, node in enumerate(nxg.nodes):
-        for edge_idx, edge in enumerate(nxg.edges(node)):
-            test_angle = nxg.edges[edge]['angle']
+    # # Minimum difference angle
+    # for node_ndx, node in enumerate(nxg.nodes):
+    #     if node == 0:
+    #         prev_edge_angle = 0.0
+    #     for edge_idx, edge in enumerate(nxg.edges(node)):
+    #         test_angle = nxg.edges[edge]['angle']
             
-            if edge[0]-edge[1] > 0: # if minimum is in the opposite direction the subtract -0.5 (negative of angle normalization value)
-                test_angle = test_angle - 0.5
+    #         if edge[0]-edge[1] > 0: # if minimum is in the opposite direction the subtract -0.5 (negative of angle normalization value)
+    #             test_angle = test_angle - 0.5
             
-            if edge_idx==0: # initialization assumes that first difference is smallest
-                min_diff_angle = test_angle-prev_edge_angle
-                tmp_prev_edge_angle = test_angle
+    #         if edge_idx==0: # initialization assumes that first difference is smallest
+    #             min_diff_angle = test_angle-prev_edge_angle
+    #             tmp_prev_edge_angle = test_angle
 
-            if np.abs( test_angle-prev_edge_angle ) < np.abs(min_diff_angle) : 
-                min_diff_angle = nxg.edges[edge]['angle']-prev_edge_angle
-                tmp_prev_edge_angle = nxg.edges[edge]['angle']
-        prev_edge_angle = tmp_prev_edge_angle
+    #         if np.abs( test_angle-prev_edge_angle ) < np.abs(min_diff_angle) : 
+    #             min_diff_angle = nxg.edges[edge]['angle']-prev_edge_angle
+    #             tmp_prev_edge_angle = nxg.edges[edge]['angle']
+    #     prev_edge_angle = tmp_prev_edge_angle
         
-        if len(nxg.edges(node)) == 0:
-            nxg.nodes[node]['min_diff_angle'] = 0
-        else:
-            nxg.nodes[node]['min_diff_angle'] = min_diff_angle
+    #     if len(nxg.edges(node)) == 0:
+    #         nxg.nodes[node]['min_diff_angle'] = 0
+    #     else:
+    #         nxg.nodes[node]['min_diff_angle'] = min_diff_angle
 
-  
-    # minimum log-length ratio
+    '''
+    # minimum log-length ratio (Growing)
     for node_ndx, node in enumerate(nxg.nodes):
         min_length_log_ratio = 0.0
         if node == 0:
@@ -175,8 +290,8 @@ def calculate_angles_and_length(nxg):
             nxg.nodes[node]['min_length_log_ratio'] = 0
         else:
             nxg.nodes[node]['min_length_log_ratio'] = min_length_log_ratio   
-   
-    # maximum log-length ratio
+ 
+    # maximum log-length ratio (Growing)
     for node_ndx, node in enumerate(nxg.nodes):
         max_length_log_ratio = 0.0
         if node == 0:
@@ -190,45 +305,67 @@ def calculate_angles_and_length(nxg):
                 max_length_log_ratio = nxg.edges[edge]['length_log']-prev_edge_length
                 tmp_prev_edge_length = nxg.edges[edge]['length_log']
         prev_edge_length = tmp_prev_edge_length
-    if len(nxg.edges(node)) == 0:
-        nxg.nodes[node]['max_length_log_ratio'] = 0
-    else:
-        nxg.nodes[node]['max_length_log_ratio'] = max_length_log_ratio
-
-    '''   
-    # Minimum Length Ratio (Absolute)
-    for node_ndx, node in enumerate(nxg.nodes):
-        min_length_log_ratio = 0.0
-        if node == 0:
-            prev_edge_length = 0.0
-            # run through full loop and find minimum length except the first edge ehich is zero
-            for edge_idx, edge in enumerate(nxg.edges(node)):
-                if (edge_idx==0): # first value at position zero is always 0. We dont want this value
-                    tmp_min = 1000000.0                
-                if (edge_idx>0 and tmp_min>nxg.edges[edge]['length_log']): # compare to find minimum.
-                    tmp_min = nxg.edges[edge]['length_log']
-                    prev_edge_length = tmp_min
-            continue
-        
-        for edge_idx, edge in enumerate(nxg.edges(node)):
-            if edge[0]-edge[1] > 0: # if opposite node-direction then skip comparison in this iteration of loop
-                skipped = True
-                continue
-            if (edge_idx==0 or skipped==True): # initialization assumes that first ratio is smallest (same length)
-                skipped = False
-                min_length_log_ratio = nxg.edges[edge]['length_log']-prev_edge_length
-                tmp_prev_edge_length = nxg.edges[edge]['length_log']
-            if np.abs(nxg.edges[edge]['length_log']-prev_edge_length) < np.abs(min_length_log_ratio) : 
-                min_length_log_ratio = nxg.edges[edge]['length_log']-prev_edge_length
-                tmp_prev_edge_length = nxg.edges[edge]['length_log']
-
-        prev_edge_length = tmp_prev_edge_length
-
         if len(nxg.edges(node)) == 0:
-            nxg.nodes[node]['min_length_log_ratio'] = 0
+            nxg.nodes[node]['max_length_log_ratio'] = 0
         else:
-            nxg.nodes[node]['min_length_log_ratio'] = min_length_log_ratio
+            nxg.nodes[node]['max_length_log_ratio'] = max_length_log_ratio
+
     '''
+
+    # # maximum log-length ratio (Absolute)
+    # for node_ndx, node in enumerate(nxg.nodes):
+    #     max_length_log_ratio = 0.0
+    #     if node == 0:
+    #         prev_edge_length = 0.0
+    #     #else:
+    #     for edge_idx, edge in enumerate(nxg.edges(node)):
+    #         if edge_idx==0: # initialization assumes that first difference is largest
+    #             max_length_log_ratio = nxg.edges[edge]['length_log']-prev_edge_length
+    #             tmp_prev_edge_length = nxg.edges[edge]['length_log']
+    #         if np.abs(nxg.edges[edge]['length_log']-prev_edge_length) > np.abs(max_length_log_ratio) : 
+    #             max_length_log_ratio = nxg.edges[edge]['length_log']-prev_edge_length
+    #             tmp_prev_edge_length = nxg.edges[edge]['length_log']
+    #     prev_edge_length = tmp_prev_edge_length
+
+    #     if len(nxg.edges(node)) == 0:
+    #         nxg.nodes[node]['max_length_log_ratio'] = 0
+    #     else:
+    #         nxg.nodes[node]['max_length_log_ratio'] = max_length_log_ratio
+
+    # # Minimum Length Ratio (Absolute)
+    # for node_ndx, node in enumerate(nxg.nodes):
+    #     min_length_log_ratio = 0.0
+    #     if node == 0:
+    #         prev_edge_length = 0.0
+    #         nxg.nodes[node]['min_length_log_ratio'] = 0
+    #         # For node[0] run through full loop and find minimum length except the first edge ehich is zero
+    #         for edge_idx, edge in enumerate(nxg.edges(node)):
+    #             if (edge_idx==0): # first value at position zero is always 0. We dont want this value
+    #                 tmp_min = 1000000.0                
+    #             if (edge_idx>0 and tmp_min>nxg.edges[edge]['length_log']): # compare to find minimum.
+    #                 tmp_min = nxg.edges[edge]['length_log']
+    #                 prev_edge_length = tmp_min
+    #         continue
+        
+    #     for edge_idx, edge in enumerate(nxg.edges(node)):
+    #         if edge[0]-edge[1] > 0: # if opposite node-direction then skip comparison in this iteration of loop
+    #             skipped = True
+    #             continue
+    #         if (edge_idx==0 or skipped==True): # initialization assumes that first ratio is smallest (same length)
+    #             skipped = False
+    #             min_length_log_ratio = nxg.edges[edge]['length_log']-prev_edge_length
+    #             tmp_prev_edge_length = nxg.edges[edge]['length_log']
+    #         if np.abs(nxg.edges[edge]['length_log']-prev_edge_length) < np.abs(min_length_log_ratio) : 
+    #             min_length_log_ratio = nxg.edges[edge]['length_log']-prev_edge_length
+    #             tmp_prev_edge_length = nxg.edges[edge]['length_log']
+
+    #     prev_edge_length = tmp_prev_edge_length
+
+    #     if len(nxg.edges(node)) == 0:
+    #         nxg.nodes[node]['min_length_log_ratio'] = 0
+    #     else:
+    #         nxg.nodes[node]['min_length_log_ratio'] = min_length_log_ratio
+    
 
 
 def group_labels_features(data_root, data_list, windowing=False):
@@ -415,6 +552,11 @@ def extract_features(nxg):
     # Angles and length features:
     calculate_angles_and_length(nxg)
 
+    extract_max_difference_angle(nxg)
+    extract_min_difference_angle(nxg)
+    extract_max_loglength_ratio_absolute(nxg)
+    extract_min_loglength_ratio_absolute(nxg)
+    
     angles = nx.get_node_attributes(nxg, 'angle')
     angles = list(angles.values())
     angles = torch.FloatTensor(np.asarray(angles).reshape(-1, 1))
@@ -445,6 +587,7 @@ def extract_features(nxg):
 
     max_length_log_ratio = nx.get_node_attributes(nxg, 'max_length_log_ratio')
     max_length_log_ratio = list(max_length_log_ratio.values())
+    #print("   MAX   ", max_length_log_ratio)
     max_length_log_ratio = torch.FloatTensor(np.asarray(max_length_log_ratio).reshape(-1, 1))
 
     max_angle = nx.get_node_attributes(nxg, 'max_angle')
@@ -480,7 +623,7 @@ def extract_features(nxg):
 
     # % Combine all features into one tensor
     #features = torch.cat((norm_positions, norm_deg, norm_ids, embedding_feat), 1)
-    features = torch.cat((norm_degrees, min_diff_angle, max_diff_angle, min_length_log_ratio, min_length_log_ratio), 1)
+    features = torch.cat((norm_degrees, min_diff_angle, max_diff_angle, max_length_log_ratio, min_length_log_ratio), 1)
     # norm_degrees, max_diff_angle, min_angle, max_length, min_length
     # features = torch.cat((norm_degrees, angles, lengths), 1)
 
