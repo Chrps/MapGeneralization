@@ -1,11 +1,11 @@
 import os
-from builtins import range
+# from builtins import range
 
 import networkx as nx
 import dgl
 import torch
 import numpy as np
-from src.deepwalk.deepwalk import DeepWalk
+# from src.deepwalk.deepwalk import DeepWalk
 from src.sliding_window_class import SlidingWindow
 sliding_window = SlidingWindow()
 
@@ -13,6 +13,7 @@ def extract_max_difference_angle(nxg):
     # Maximum difference angle requires that angles have been computed in advance.
     max_diff_angle = []
     tmp_prev_edge_angle = []
+    prev_edge_angle = []
     nx.set_node_attributes(nxg, max_diff_angle, 'max_diff_angle')
     nx.set_edge_attributes(nxg, max_diff_angle, 'max_diff_angle')
     for node_ndx, node in enumerate(nxg.nodes):
@@ -33,6 +34,7 @@ def extract_min_difference_angle(nxg):
     # Minimum difference angle requires that angles have been computed in advance.
     min_diff_angle = []
     tmp_prev_edge_angle = []
+    prev_edge_angle = []
     nx.set_node_attributes(nxg, min_diff_angle, 'min_diff_angle')
     nx.set_edge_attributes(nxg, min_diff_angle, 'min_diff_angle')
     for node_ndx, node in enumerate(nxg.nodes):
@@ -61,6 +63,9 @@ def extract_min_difference_angle(nxg):
 def extract_max_loglength_ratio_absolute(nxg):
     # maximum log-length ratio (Absolute)
     max_length_log_ratio = []
+    prev_edge_length = []
+    tmp_prev_edge_length = []
+
     nx.set_node_attributes(nxg, max_length_log_ratio, 'max_length_log_ratio')
     nx.set_edge_attributes(nxg, max_length_log_ratio, 'max_length_log_ratio')
     for node_ndx, node in enumerate(nxg.nodes):
@@ -84,8 +89,12 @@ def extract_max_loglength_ratio_absolute(nxg):
 
 def extract_min_loglength_ratio_absolute(nxg):
     # Minimum Length Ratio (Absolute)
+    prev_edge_length = []
     min_length_log_ratio = 1000000.0
     tmp_prev_edge_length = 0.0
+    tmp_min = []
+    skipped = False
+
     nx.set_node_attributes(nxg, min_length_log_ratio, 'min_length_log_ratio')
     nx.set_edge_attributes(nxg, min_length_log_ratio, 'min_length_log_ratio')
     for node_ndx, node in enumerate(nxg.nodes):
@@ -130,7 +139,7 @@ def norm_ang(angle, new_max=0.5, new_min=-0.5):
     new_range = new_max - new_min
     out_angle = (((angle - old_min) * new_range) / old_range) + new_min
     if (np.abs(out_angle)>new_max-0.00000001):
-        out_angle = 0.0;
+        out_angle = 0.0
     return out_angle
 
 def calculate_angles_and_length(nxg):
