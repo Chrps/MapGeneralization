@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots()
 
-    pts = ax.scatter(data[:, 0], data[:, 1], s=80, c = labels)
+    pts = ax.scatter(data[:, 0], data[:, 1], s=80, c=labels)
     ax.add_collection(edge_collection)
     selector = SelectFromCollection(ax, pts)
     fc = pts.get_facecolors()
@@ -84,10 +84,12 @@ if __name__ == '__main__':
     fig.suptitle("Mode: " + mode + " | Instance: " + str(instance), x=0.5, y=0.05)
     ann_list = []
 
+
     def accept(event):
-        global mode
+        global mode, class_label
         global instance
         global ann_list
+
         if event.key == "n":
             mode = 'SELECT'
 
@@ -103,17 +105,17 @@ if __name__ == '__main__':
         if event.key == "b":
             file_name = os.path.basename(args['graph'])
             file_name = os.path.splitext(file_name)[0]
-            #np.save('C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/scaled_graph_reannotated/Canterbury/' + file_name + '.npy', labels)
+            # np.save('C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/scaled_graph_reannotated/Canterbury/' + file_name + '.npy', labels)
             nx.set_node_attributes(G, labels, 'label')
             for node in G.nodes:
                 G.nodes[node]['label'] = labels[node]
             nx.write_gpickle(G, args['graph'])
 
         if event.key == "enter":
-            #print(mode)
-            #print("Selected points:")
-            #print(selector.xys[selector.ind])
-            #print(selector.ind)
+            # print(mode)
+            # print("Selected points:")
+            # print(selector.xys[selector.ind])
+            # print(selector.ind)
             if mode == 'SELECT':
                 class_label = 1
                 np.put(instances, selector.ind, instance, mode='clip')
@@ -122,7 +124,7 @@ if __name__ == '__main__':
                 np.put(instances, selector.ind, 0, mode='clip')
             np.put(labels, selector.ind, class_label, mode='clip')
 
-            #print(instances)
+            # print(instances)
             for idx in range(len(selector.fc)):
                 class_label = labels[idx]
                 if class_label == 1:
@@ -141,15 +143,13 @@ if __name__ == '__main__':
                     x_coor = np.mean(data[instance_indices, 0])
                     y_coor = np.mean(data[instance_indices, 1])
                     ann = ax.annotate(str(int(an_instance)),
-                                xy=(x_coor, y_coor))
+                                      xy=(x_coor, y_coor))
                     ann_list.append(ann)
 
+            # pts = ax.scatter(data[:, 0], data[:, 1], s=80, c='r')
 
-
-            #pts = ax.scatter(data[:, 0], data[:, 1], s=80, c='r')
-
-            #ax.scatter(data[:, 0], data[:, 1], s=80, color=labels)
-            #ax.set_title("")
+            # ax.scatter(data[:, 0], data[:, 1], s=80, color=labels)
+            # ax.set_title("")
         fig.suptitle("Mode: " + mode + " | Instance: " + str(instance), x=0.5, y=0.05)
         fig.canvas.draw()
 

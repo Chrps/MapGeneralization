@@ -5,7 +5,8 @@
 # pip3 install gensim
 # pip3 install matplotlib
 # pip3 install sklearn
-#
+# pip3 install ezdxf
+# pip3 install open3d
 six~=1.15.0
 scipy~=1.5.2
 numpy~=1.19.2

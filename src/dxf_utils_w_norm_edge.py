@@ -5,9 +5,9 @@ Utility file for extracting the data (nodes and edges) from .dxf AutoCAD Files
 import ezdxf
 import os
 import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
+# from matplotlib.collections import LineCollection
 from matplotlib.figure import figaspect
-from matplotlib import colors as mcolors
+# from matplotlib import colors as mcolors
 import math
 import networkx as nx
 
@@ -55,6 +55,8 @@ class DxfReader:
 
     def entity2line(self, e):
         points_out = []
+        prev_point = []
+
         if not self.is_hidden(e):
             if e.dxftype() is 'LINE':
                 # TODO if line is smaller than threshold then what?

@@ -1,5 +1,5 @@
 import os
-import argparse
+# import argparse
 
 # file handle fh
 fh = open('data/Public/private_list.txt')
@@ -16,6 +16,3 @@ while True:
     if not line:
         break
 fh.close()
-
-
- 

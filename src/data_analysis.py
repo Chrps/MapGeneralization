@@ -2,10 +2,12 @@ import os
 import networkx as nx
 import numpy as np
 
+
 def get_labels(nxg_):
     # Get labels from netx graph
     label_dict = nx.get_node_attributes(nxg_, 'label')
     return list(label_dict.values())
+
 
 folder = r'C:\Users\jahj\projects\MapGeneralization'
 data_list = '/data/Public/test_list.txt'
@@ -42,8 +44,8 @@ print("Nr. of nodes: %d" % total_nr_nodes)
 print("Nr. of edges: %d" % total_nr_edges)
 print("Nr. of door nodes: %d" % total_nr_door_nodes)
 print("Nr. of non-door nodes: %d\n" % total_nr_non_door_nodes)
-print("Percentage of door nodes: %.2f%%" % float(total_nr_door_nodes/total_nr_nodes*100))
-print("Percentage of non-door nodes: %.2f%%\n" % float(total_nr_non_door_nodes/total_nr_nodes*100))
+print("Percentage of door nodes: %.2f%%" % float(total_nr_door_nodes / total_nr_nodes * 100))
+print("Percentage of non-door nodes: %.2f%%\n" % float(total_nr_non_door_nodes / total_nr_nodes * 100))
 print("Std. of nodes: %.2f" % std_of_nodes)
 print("Std. of edges: %.2f" % std_of_edges)
 print("Std. of door nodes: %.2f" % std_of_door_nodes)

@@ -43,8 +43,8 @@ def evaluate(model, graphs, features, labels):
         labels0 = torch.LongTensor(np.take(labels.numpy(), labels0_idx))
         labels1 = torch.LongTensor(np.take(labels.numpy(), labels1_idx))
         # For class 0 and class 1
-        correct0 = torch.sum(indices0 == labels0)
-        correct1 = torch.sum(indices1 == labels1)
+        correct0 = torch.sum(torch.LongTensor(indices0 == labels0))
+        correct1 = torch.sum(torch.LongTensor(indices1 == labels1))
 
         class0_acc = correct0.item() * 1.0 / len(labels0)
         class1_acc = correct1.item() * 1.0 / len(labels1)

@@ -12,7 +12,7 @@ def dxf2graph(data_path_):
     # Get all subdirectories in path
     sub_dirs = [dI for dI in os.listdir(pub_data_dir) if os.path.isdir(os.path.join(pub_data_dir, dI))]
 
-    # Create subdirectories in directory for preoduced data
+    # Create subdirectories in directory for produced data
     for sub_dir in sub_dirs:
         graph_dir = os.path.join(os.path.join(pub_data_dir, os.path.join('re_prod', sub_dir)), 'graphs')
         Path(graph_dir).mkdir(parents=True, exist_ok=True)
@@ -28,6 +28,5 @@ def dxf2graph(data_path_):
 
         dxf_obj.convert_data_to_graph(out_dir, visualize=False)
 
-
-#data_path = r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper'
-#dxf2graph(data_path)
+# data_path = r'C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper'
+# dxf2graph(data_path)

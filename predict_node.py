@@ -7,9 +7,10 @@ import networkx as nx
 import argparse
 import numpy as np
 from itertools import count
-from sklearn.cluster import DBSCAN, SpectralClustering, ward_tree
-from scipy.spatial import ConvexHull, convex_hull_plot_2d
-from matplotlib.pyplot import cm
+from sklearn.cluster import DBSCAN  # , SpectralClustering, ward_tree
+
+# from scipy.spatial import ConvexHull, convex_hull_plot_2d
+# from matplotlib.pyplot import cm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data-path', type=str, default='data/Public')
@@ -17,6 +18,7 @@ parser.add_argument('--predict-path', type=str, default='test_list.txt')
 parser.add_argument('--model_name', type=str, default='gat_20-05-22_19-04-14_final')
 
 args = parser.parse_args()
+
 
 def load_model_txt(model_name):
     model_txt = 'trained_models/' + model_name + '/predict_info.txt'
@@ -33,6 +35,7 @@ def load_model_txt(model_name):
 
     return net, n_features, n_classes
 
+
 def draw(results, ax, nx_G, positions):
     cls1color = 'r'
     cls2color = 'b'
@@ -44,12 +47,12 @@ def draw(results, ax, nx_G, positions):
     ax.cla()
     ax.axis('off')
     nx.draw_networkx(nx_G.to_undirected(), positions, node_color=colors,
-            with_labels=False, node_size=5, ax=ax)
-    #id_dict = {i: i for i in range(0, len(results))}
-    #nx.draw_networkx_labels(nx_G, positions, id_dict)
+                     with_labels=False, node_size=5, ax=ax)
+    # id_dict = {i: i for i in range(0, len(results))}
+    # nx.draw_networkx_labels(nx_G, positions, id_dict)
+
 
 def draw_inst(nx_G, ax, positions):
-
     groups = set(nx.get_node_attributes(nx_G, 'instance').values())
     mapping = dict(zip(sorted(groups), count()))
     nodes = nx_G.nodes()
@@ -58,7 +61,8 @@ def draw_inst(nx_G, ax, positions):
     ax.cla()
     ax.axis('off')
     nx.draw_networkx(nx_G.to_undirected(), positions, node_color=colors,
-                     with_labels=False, node_size=5, ax=ax, cmap=plt.cm.jet)
+                     with_labels=False, node_size=5, ax=ax, cmap=plt.jet())
+
 
 def draw_DBSCAN_inst(nx_G, ax, positions, instances):
     groups = set(nx.get_node_attributes(nx_G, 'instance').values())
@@ -69,7 +73,8 @@ def draw_DBSCAN_inst(nx_G, ax, positions, instances):
     ax.cla()
     ax.axis('off')
     nx.draw_networkx(nx_G.to_undirected(), positions, node_color=colors,
-                     with_labels=False, node_size=5, ax=ax, cmap=plt.cm.jet)
+                     with_labels=False, node_size=5, ax=ax, cmap=plt.jet())
+
 
 def post_processing(nxg_, predictions_):
     # Graph morphology closing
@@ -116,11 +121,11 @@ def instancing(nxg_, predictions, instance=1):
     return sub_nxg
 
 
-def reject_outliers(dataIn,lower_factor=2.0, higher_factor=2.0):
+def reject_outliers(dataIn, lower_factor=2.0, higher_factor=2.0):
     q25, q75 = np.percentile(dataIn, 25), np.percentile(dataIn, 75)
     iqr = q75 - q25
-    #iqrSigma = iqr/1.34896
-    #medData = np.median(dataIn)
+    # iqrSigma = iqr/1.34896
+    # medData = np.median(dataIn)
     cut_off_upper = iqr * 6
     cut_off_lower = iqr * 2
     lower, upper = q25 - cut_off_lower, q75 + cut_off_upper
@@ -132,6 +137,7 @@ def reject_outliers(dataIn,lower_factor=2.0, higher_factor=2.0):
             inliers.append(idx)
     return inliers
 
+
 def reject_outliers_hardcoded(areas, lengths, heights, ratios):
     inliers = []
     for idx, data in enumerate(zip(areas, lengths, heights, ratios)):
@@ -139,6 +145,7 @@ def reject_outliers_hardcoded(areas, lengths, heights, ratios):
         if ratio > 0.3 and length < 3000 and height < 3000:
             inliers.append(idx)
     return inliers
+
 
 def remove_nodes_far_from_center(graph):
     positions_ = nx.get_node_attributes(graph, 'pos')
@@ -153,7 +160,8 @@ def remove_nodes_far_from_center(graph):
         else:
             print(print(dist))
     sub_graph = graph.subgraph(nodes_to_keep)
-    return(sub_graph)
+    return (sub_graph)
+
 
 def bounding_box_params(points):
     bot_left_x = min(point[0] for point in points)
@@ -167,7 +175,7 @@ def bounding_box_params(points):
     width_height_list = [width, height]
     max_box = max(width_height_list)
     min_box = min(width_height_list)
-    ratio = min_box/max_box
+    ratio = min_box / max_box
 
     return width * height, height, width, ratio
 
@@ -210,22 +218,20 @@ def predict(data_path, predict_path, model_name):
         ax = fig1.subplots()
         draw(predictions, ax, nxg, positions)
 
-
         # Perform graph morphology closing
         predictions_alt = predictions
-        #predictions_alt = post_processing(nxg, predictions)
-        #predictions_alt = post_processing(nxg, predictions_alt)
+        # predictions_alt = post_processing(nxg, predictions)
+        # predictions_alt = post_processing(nxg, predictions_alt)
 
         # Extract door nodes
         sub_nxg = instancing(nxg, predictions_alt)
-        inst_predictions = [1]*sub_nxg.number_of_nodes()
+        inst_predictions = [1] * sub_nxg.number_of_nodes()
 
         fig2 = plt.figure(dpi=150)
         fig2.clf()
         ax = fig2.subplots()
         ax.axis('equal')
         draw(inst_predictions, ax, sub_nxg, positions)  # draw the results
-
 
         # Separate disjoint graphs (instancing)
         disjoint_sub_graphs = []
@@ -306,14 +312,12 @@ def predict(data_path, predict_path, model_name):
         inliers = reject_outliers_hardcoded(area_list, width_list, height_list, ratio_list)
         selected_graphs = [selected_graphs[i] for i in inliers]
 
-
-
         print('Numer of doors: %d' % len(selected_graphs))
 
         seleted_graphs_joined = nx.Graph()
 
         for idx, graph in enumerate(selected_graphs):
-            #sub_graph = remove_nodes_far_from_center(graph)
+            # sub_graph = remove_nodes_far_from_center(graph)
             nx.set_node_attributes(graph, [], 'instance')
             for node in graph.nodes:
                 graph.nodes[node]['instance'] = idx
@@ -325,7 +329,6 @@ def predict(data_path, predict_path, model_name):
         ax.axis('equal')
         draw_inst(seleted_graphs_joined, ax, positions)
         plt.show()
-
 
 
 if __name__ == '__main__':

@@ -1,16 +1,16 @@
-'''
+"""
 Utility file for extracting the data (nodes and edges) from .dxf AutoCAD Files
-'''
+"""
 
 import ezdxf
-from ezdxf.groupby import groupby
-import os
+# from ezdxf.groupby import groupby
+# import os
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.figure import figaspect
 import matplotlib
 matplotlib.use('TKAgg')
-import math
+# import math
 import networkx as nx
 import open3d as o3d
 import numpy as np
@@ -59,6 +59,7 @@ class DxfReader:
 
     @staticmethod
     def arc(center, start_angle, end_angle, radius, line_out, id_out):
+        prev_point = []
         delta_angle = 180.0 - abs(abs(start_angle - end_angle) - 180.0)
 
         end_angle = start_angle + delta_angle
@@ -114,8 +115,11 @@ class DxfReader:
 
 
     def entity2line(self, e):
+        arc_params = []
         line_out = []
         id_out = []
+        prev_point = []
+
         if e.dxftype() is 'LINE':
             point1 = e.dxf.start
             point2 = e.dxf.end

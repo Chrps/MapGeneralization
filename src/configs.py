@@ -6,11 +6,11 @@ RGCN_CONFIG = {
     'weight_decay': 5e-4,
 }
 
-#MoNet_CONFIG = {
+# MoNet_CONFIG = {
 #    'extra_args': [10, [32, 64, 128, 256]],
 #    'lr': 1e-3,
 #    'weight_decay': 5e-6,
-#}
+# }
 
 MoNet_CONFIG = {
     'extra_args': [10, 10, [32, 64, 128, 256]],
@@ -25,7 +25,8 @@ GCN_CONFIG = {
 }
 
 GAT_CONFIG = {
-    'extra_args': [20, 10, [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1], F.elu, 0.0, 0.0, 0.2, True], # old:  [8, 8, [3] * 8 + [1], F.elu, 0.0, 0.0, 0.2, True], NOTE: Model Config: [20, 10, [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1], <function elu at 0x0000024166DF5268>, 0.0, 0.0, 0.2, True] lr: 0.001 weight decay: 0.0005
+    'extra_args': [20, 10, [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1], F.elu, 0.0, 0.0, 0.2, True],
+    # old:  [8, 8, [3] * 8 + [1], F.elu, 0.0, 0.0, 0.2, True], NOTE: Model Config: [20, 10, [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1], <function elu at 0x0000024166DF5268>, 0.0, 0.0, 0.2, True] lr: 0.001 weight decay: 0.0005
     'lr': 1e-3,
     'weight_decay': 5e-4,
 }

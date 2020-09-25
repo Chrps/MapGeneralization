@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import os
 import networkx as nx
 import argparse
-import math
+# import math
 import numpy as np
 from itertools import count
 from sklearn.cluster import DBSCAN
@@ -57,7 +57,7 @@ def draw_inst(nx_G, ax, positions):
 
     ax.axis('off')
     nx.draw_networkx(nx_G.to_undirected(), positions, node_color=colors,
-                     with_labels=False, node_size=10, ax=ax, cmap=plt.cm.jet)
+                     with_labels=False, node_size=10, ax=ax, cmap=plt.jet())
 
 
 
