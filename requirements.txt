@@ -21,4 +21,4 @@ torch~=1.6.0
 torchvision~=0.7.0
 ezdxf~=0.14.1
 open3d~=0.10.0.0
-
+pytorch-lightning~=0.9.0
