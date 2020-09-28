@@ -41,8 +41,8 @@ def evaluate(model, g, features, labels):
         labels0 = torch.LongTensor(np.take(labels.numpy(), labels0_idx))
         labels1 = torch.LongTensor(np.take(labels.numpy(), labels1_idx))
         # For class 0 and class 1
-        correct0 = torch.sum(torch.LongTensor(indices0 == labels0))
-        correct1 = torch.sum(torch.LongTensor(indices1 == labels1))
+        correct0 = torch.sum(indices0 == labels0)
+        correct1 = torch.sum(indices1 == labels1)
 
         # correct.item() * 1.0 / len(labels)
         class0_acc = correct0.item() * 1.0 / len(labels0)
@@ -140,7 +140,7 @@ def save_model(model, epoch, desired_net, n_features, num_classes, start_date, o
         model_txt.write('Saved at Epoch: ' + str(epoch) + '\n')
         model_txt.write('Accuracy: %.2f\n' % overall_acc)
         model_txt.write(
-            'Feature specs: norm_degrees, min_diff_angle, max_diff_angle, max_length_log_ratio, min_length_log_ratio')
+            'Feature specs: norm_degrees, min_diff_angle, max_diff_angle, max_length_log, min_length_log')
 
 
 def collate(samples):

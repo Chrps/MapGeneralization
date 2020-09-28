@@ -632,7 +632,7 @@ def extract_features(nxg):
 
     # % Combine all features into one tensor
     #features = torch.cat((norm_positions, norm_deg, norm_ids, embedding_feat), 1)
-    features = torch.cat((norm_degrees, min_diff_angle, max_diff_angle, max_length_log_ratio, min_length_log_ratio), 1)
+    features = torch.cat((norm_degrees, min_diff_angle, max_diff_angle, max_length_log, min_length_log), 1)
     # norm_degrees, max_diff_angle, min_angle, max_length, min_length
     # features = torch.cat((norm_degrees, angles, lengths), 1)
 
