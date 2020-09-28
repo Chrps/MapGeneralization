@@ -7,7 +7,7 @@ By Christoffer P. Simonsen, Frederik M. Thiesson, Mark P. Philipsen, and Thomas 
 
 ## Introduction
 
-This repository contains the code & links to annotation data for our WACV 2021 paper: ['Generalizing Doors in Technical Drawings using Graph Neural Networks'](https://arxiv.org/abs/xxx). Here, we present a new method for recognizing floor plan elements by constructing graphs from the primitives in dxf files and performing node classifiation using Graph Neural Networks.
+This repository contains the code & links to annotation data for our WACV 2021 submission: ['Generalizing Doors in Technical Drawings using Graph Neural Networks'](https://arxiv.org/abs/xxx). Here, we present how floor plan elements can be recognized by constructing graphs from the primitives in dxf files and performing node classifiation using Graph Neural Networks.
 
 ## Requirements
 
@@ -21,12 +21,15 @@ Our code has been tested using torch==1.5.1 & pytorch-lightning==0.8.3 on a Thre
 
 ## Data
 
-Our pubic dataset will be available [here](https://vap.aau.dk/). We suggest unpacking the zip fiels in the [data/](data/) directory. The dataset consists of all of the tools and files shown in Figure
-
+Our pubic dataset is available in the [data/](data/Public) directory. The dataset consists of all of the tools and files shown in Figure
 
 ![dataset_creation_and_content](figs/dataset_creation_and_content.png)
 
-The data is available as the original dxf files and as ready to use labeled graphs stored as xx files.
+The data is available as ready to use labeled graphs stored as .gpickle files. In addition, we provide the original dxf files as well as tools for either extracting the graphs or generating rasterized floor plan images.
+
+TODO: For more details about the RUB dataset and existing datasets see [datasets.pdf](datasets.pdf).
+
+## Tools
 
 **DXF -> Line data -> Graph:** To extract graphs from dxf files use DxfReader.extract_data() to create line data and DxfReader.convert_data_to_graph() to convert it to a graph - see main.py
 
@@ -44,6 +47,8 @@ sudo apt install libreoffice texlive-extra-utils
 - gs -sDEVICE=png16m -dNOPAUSE -dBATCH -dSAFER -sOutputFile=A1322PE-0.png A1322PE-0-crop.pdf
 
 or use dxf2png.py -l <list_of_dxf_files>.txt
+
+NB: fails to render arcs correctly
 
 ## Usage
 
