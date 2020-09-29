@@ -60,21 +60,21 @@ class LightningNodeClassifier(pl.LightningModule):
         self.data_test = graph_utils.group_labels_features(self.hparams.data_path,
                                                            self.hparams.test_list,
                                                            windowing=self.hparams.windowing)
-    @pl.data_loader
+    #@pl.data_loader
     def train_dataloader(self):
         return DataLoader(self.data_train,
                           batch_size=self.hparams.batch_size,
                           shuffle=True,
                           num_workers=self.hparams.n_workers,
                           collate_fn=collate)
-    @pl.data_loader
+    #@pl.data_loader
     def val_dataloader(self):
         return DataLoader(self.data_val,
                           batch_size=self.hparams.batch_size,
                           shuffle=False,
                           num_workers=self.hparams.n_workers,
                           collate_fn=collate)
-    @pl.data_loader
+    #@pl.data_loader
     def test_dataloader(self):
         return DataLoader(self.data_test,
                           batch_size=self.hparams.batch_size,
@@ -97,7 +97,7 @@ class LightningNodeClassifier(pl.LightningModule):
         return {'loss': loss}
 
     def training_epoch_end(self, outputs):
-        loss = torch.stack([x['batch_loss'] for x in outputs]).mean().detach().numpy()
+        loss = torch.stack([x['loss'] for x in outputs]).mean().detach().numpy()
         tensorboard_logs = {'train_loss': loss}
         return {'train_loss': loss, 'log': tensorboard_logs}
 

@@ -26,7 +26,7 @@ if __name__ == '__main__':
     ap.add_argument("-net", "--network", type=str,
                     default='gat', help="Network architecture")
     ap.add_argument("-bs", "--batch_size", type=int,
-                    default=7, help="Batch size")
+                    default=5, help="Batch size")
     ap.add_argument("-ls", "--learning_rate", type=float,
                     default=0.001, help="Learning rate")
     ap.add_argument("-sh", "--size_hidden", type=int,
@@ -55,11 +55,11 @@ if __name__ == '__main__':
       'learning_rate': args['learning_rate'],
       'n_classes': 2,
       'n_features': 5,
-      'n_epochs': 250,
+      'n_epochs': 500,
       'size_hidden': args['size_hidden'],
       'n_layers': args['n_layers'],
       'windowing': args['windowing'],
-      'n_workers':6,
+      'n_workers':4,
       'gpus':None
      }
 
@@ -104,6 +104,7 @@ if __name__ == '__main__':
 
 
     trainer.test(model, test_dataloaders=model.test_dataloader())
+    wandb.save('model.pth')
 
     #TEST RESULTS
     #{'test_class0_acc': 0.8563412300303268,
