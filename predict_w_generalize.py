@@ -15,7 +15,7 @@ parser.add_argument('--data-path', type=str,
                     default=r'data/Public')  # 'C:\Users\jahj\projects\MapGeneralization\data\data\data_for_paper')#C:\Users\Chrips\Aalborg Universitet\Frederik Myrup Thiesson - data\data_for_paper')
 parser.add_argument('--predict-path', type=str, default='test_list.txt')
 parser.add_argument('--model_name', type=str,
-                    default='gat_20-09-23_15-07-05')  # gat_20-09-15_09-22-56')#gat_20-06-10_14-37-22_beast')# gat_20-09-09_09-43-31_5features')#gat_20-05-22_19-04-14_final')#
+                    default='gat_20-09-29_10-56-57')  # gat_20-09-15_09-22-56')#gat_20-06-10_14-37-22_beast')# gat_20-09-09_09-43-31_5features')#gat_20-05-22_19-04-14_final')#
 
 args = parser.parse_args()
 

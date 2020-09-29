@@ -140,7 +140,7 @@ def save_model(model, epoch, desired_net, n_features, num_classes, start_date, o
         model_txt.write('Saved at Epoch: ' + str(epoch) + '\n')
         model_txt.write('Accuracy: %.2f\n' % overall_acc)
         model_txt.write(
-            'Feature specs: norm_degrees, min_diff_angle, max_diff_angle, max_length_log, min_length_log')
+            'Feature specs: norm_degrees, norm_ids, max_diff_angle, max_length_log, min_length_log')
 
 
 def collate(samples):
@@ -158,10 +158,10 @@ def collate(samples):
 
 def train(desired_net, num_epochs, data_path, train_file, valid_file, num_classes, windowing, batch_size):
     # Retrieve dataset and prepare it for DataLoader
-
     trainset = graph_utils.group_labels_features(data_path,
                                                  train_file,
                                                  windowing=windowing)
+    
     data_loader = DataLoader(trainset,
                              batch_size=batch_size,
                              shuffle=True,
@@ -244,8 +244,7 @@ def train(desired_net, num_epochs, data_path, train_file, valid_file, num_classe
         non_door_acc_list.append(non_door_acc)
         door_acc_list.append(door_acc)
         epoch_list.append(epoch)
-        plot_loss_and_acc(num_epochs, epoch_list, losses, overall_acc_list, non_door_acc_list, door_acc_list,
-                          desired_net, start_date)
+        # plot_loss_and_acc(num_epochs, epoch_list, losses, overall_acc_list, non_door_acc_list, door_acc_list, desired_net, start_date)
 
 
 if __name__ == '__main__':
