@@ -1,2 +1,2 @@
 #!/bin/bash
-docker exec -it dockermapspeople bash
+docker exec -it dockerdoordetector bash

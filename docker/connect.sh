@@ -1,2 +1,2 @@
 #!/bin/bash
-docker attach dockermapspeople bash
+docker attach dockerdoordetector bash

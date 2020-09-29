@@ -1,2 +1,2 @@
 #!/bin/bash
-docker start dockermapspeople
+docker start dockerdoordetector

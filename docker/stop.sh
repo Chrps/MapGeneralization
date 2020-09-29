@@ -1,2 +1,2 @@
 #!/bin/bash
-docker stop dockermapspeople
+docker stop dockerdoordetector

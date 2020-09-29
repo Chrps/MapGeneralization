@@ -1,3 +1,3 @@
 #!/bin/bash
-docker stop dockermapspeople
-docker rm dockermapspeople
+docker stop dockerdoordetector
+docker rm dockerdoordetector

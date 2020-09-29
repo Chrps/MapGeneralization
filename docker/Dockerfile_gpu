@@ -35,3 +35,20 @@ RUN rm -rf /var/lib/apt/lists/*
 
 COPY user.sh /usr/local/bin/
 CMD bash -C '/usr/local/bin/user.sh'
+
+
+#six == 1.15.0
+#scipy == 1.5.2
+#numpy == 1.19.2
+#torch == 1.6.0
+#gensim == 3.8.3
+#dgl == 0.5.2
+#networkx == 2.5
+#matplotlib == 3.3.2
+#sklearn == 0.0
+#scikit-learn == 0.23.2
+#torch == 1.6.0
+#torchvision == 0.7.0
+#ezdxf == 0.14.1
+#open3d == 0.10.0.0
+#pytorch-lightning == 0.9.0
