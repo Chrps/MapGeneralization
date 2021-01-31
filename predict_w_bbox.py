@@ -11,9 +11,9 @@ from itertools import count
 from sklearn.cluster import DBSCAN
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data-path', type=str, default='data/Public')
-parser.add_argument('--predict-path', type=str, default='test_list.txt')
-parser.add_argument('--model_name', type=str, default='gcn_20-09-08_17-52-27')
+parser.add_argument('--data-path', type=str, default='data/Private')
+parser.add_argument('--predict-path', type=str, default='test_list_reduced.txt')
+parser.add_argument('--model_name', type=str, default='gat_20-09-29_15-55-58')
 
 args = parser.parse_args()
 
@@ -176,8 +176,23 @@ def determine_bboxes(graphs):
         gen_door_graph.clear()
     return bboxes, list_gen_bbox_graphs
 
+def normalize_coord01(coord, min_x, max_x, min_y, max_y):
+    coord[0] = (coord[0] - min_x) / (max_x - min_x)
+    coord[1] = (coord[1] - min_y) / (max_y - min_y)
+    return coord
 
-def predict(data_path, predict_path, model_name):
+
+def normalize_bboxes(bboxes_, min_x_, max_x_, min_y_, max_y_):
+    norm_bboxes = []
+    for bbox in bboxes_:
+        tr = [bbox[0], bbox[3]]
+        bl = [bbox[2], bbox[1]]
+        tr_norm = normalize_coord01(tr, min_x_, max_x_, min_y_, max_y_)
+        bl_norm = normalize_coord01(bl, min_x_, max_x_, min_y_, max_y_)
+        norm_bboxes.append(tr_norm+bl_norm)
+    return norm_bboxes
+
+def predict(data_path, predict_path, model_name, show=False):
     # Read the parameters of the trained model
     net, n_features, n_classes = load_model_txt(model_name)
 
@@ -192,7 +207,13 @@ def predict(data_path, predict_path, model_name):
 
     # Get the list of files for prediction
     pred_files = [os.path.join(data_path, line.rstrip()) for line in open(os.path.join(data_path, predict_path))]
-    for file in pred_files:
+    for file in pred_files[4:]:
+        path, file_name = os.path.split(file)
+        print(file)
+        bbox_path = path.replace('anno','pred_bboxes')
+        if not os.path.exists(bbox_path):
+            os.makedirs(bbox_path)
+
         # Convert the gpickle file to a dgl graph
         dgl_g = graph_utils.convert_gpickle_to_dgl_graph(file)
         # Get the features from the given graph
@@ -210,18 +231,19 @@ def predict(data_path, predict_path, model_name):
         positions = nx.get_node_attributes(nxg, 'pos')
         positions = list(positions.values())
 
-        # Plot graph
-        ''''fig2 = plt.figure(dpi=150)
-        fig2.clf()
-        ax = fig2.subplots()
-        inst_predictions = [0] * nxg.number_of_nodes()
-        draw(inst_predictions, ax, nxg, positions)'''
+        if show:
+            # Plot graph
+            ''''fig2 = plt.figure(dpi=150)
+            fig2.clf()
+            ax = fig2.subplots()
+            inst_predictions = [0] * nxg.number_of_nodes()
+            draw(inst_predictions, ax, nxg, positions)'''
 
-        # Plot graph with predictions
-        fig1 = plt.figure(dpi=150)
-        fig1.clf()
-        ax = fig1.subplots()
-        draw(predictions, ax, nxg, positions)
+            # Plot graph with predictions
+            fig1 = plt.figure(dpi=150)
+            fig1.clf()
+            ax = fig1.subplots()
+            draw(predictions, ax, nxg, positions)
 
         # Get labels
         labels = nx.get_node_attributes(nxg, 'label')
@@ -303,55 +325,87 @@ def predict(data_path, predict_path, model_name):
         # Determine bbox
         list_bboxes, list_gen_bboxes = determine_bboxes(selected_graphs)
 
-        # Plot graph with generalized doors
-        pos = nx.get_node_attributes(nxg, 'pos')
-        fig5 = plt.figure(dpi=150)
-        fig5.clf()
-        ax = fig5.subplots()
-        nx.draw(seleted_graphs_joined, pos, with_labels=False, node_size=10, ax=ax, node_color='b')
+        x_positions, y_positions = zip(*positions)
+        x_min = min(x_positions)
+        x_max = max(x_positions)
+        y_min = min(y_positions)
+        y_max = max(y_positions)
 
-        nxg_copy = nxg.copy()
+        norm_bboxes = normalize_bboxes(list_bboxes, x_min, x_max, y_min, y_max)
+        norm_bboxes_inv_y = [[box[0], 1-box[1], box[2], 1-box[3]] for box in norm_bboxes]
+        #print(norm_bboxes_inv_y)
+        '''
+        fig_norm_boxes = plt.figure(dpi=150)
+        fig_norm_boxes.clf()
+        ax = fig_norm_boxes.subplots()
+        for box in norm_bboxes_inv_y:
+            rect = patches.Rectangle((box[2], box[1]), box[0]-box[2], box[3]-box[1], linewidth=1, edgecolor='r', facecolor='none')
+            ax.add_patch(rect)
+        '''
+        bboxes_filename = file_name.replace('_w_annotations.gpickle', '_gnn_boxes.txt')
+        with open(os.path.join(bbox_path, bboxes_filename), 'w') as f:
+            for item in norm_bboxes:
+                f.write("%s\n" % ' '.join(str(v) for v in item))
 
-        bbox_and_org_graph = nx.Graph()
-        bbox_and_org_graph = nx.compose(bbox_and_org_graph, nxg_copy)
-        bbox_graph = nx.Graph()
-        for g_idx, g in enumerate(list_gen_bboxes):
-            gen_pos = nx.get_node_attributes(g, 'pos')
-            nx.draw(g, gen_pos, with_labels=False, node_color='g', node_size=30, ax=ax)
-            nx.draw_networkx_edges(g, gen_pos, width=2, alpha=0.8, edge_color='g')
-            g = nx.convert_node_labels_to_integers(g, first_label=4 * g_idx)
-            bbox_graph = nx.compose(bbox_graph, g)
-            bbox_graph = nx.convert_node_labels_to_integers(bbox_graph,
-                                                        first_label=bbox_and_org_graph.number_of_nodes())
-        bbox_and_org_graph = nx.compose(bbox_and_org_graph, bbox_graph)
+        bboxes_image_filename = file_name.replace('_w_annotations.gpickle', '_gnn_boxes_image_format.txt')
+        with open(os.path.join(bbox_path, bboxes_image_filename), 'w') as f:
+            for item in norm_bboxes_inv_y:
+                f.write("%s\n" % ' '.join(str(v) for v in item))
 
-        fig6 = plt.figure(dpi=150)
-        fig6.clf()
-        ax = fig6.subplots()
-        bbox_and_org_graph_pos = nx.get_node_attributes(bbox_and_org_graph, 'pos')
-        nx.draw(bbox_and_org_graph, bbox_and_org_graph_pos, with_labels=False, node_size=10, ax=ax, node_color='r')
+        if show:
 
-        fig7 = plt.figure(dpi=150)
-        fig7.clf()
-        ax = fig7.subplots()
-        bbox_graph_pos = nx.get_node_attributes(bbox_graph, 'pos')
-        nx.draw(bbox_graph, bbox_graph_pos, with_labels=False, node_size=10, ax=ax,
-                node_color='g')
+            # Plot graph with generalized doors
+            pos = nx.get_node_attributes(nxg, 'pos')
+            fig5 = plt.figure(dpi=150)
+            fig5.suptitle('graph with generalized doors', fontsize=12)
+            fig5.clf()
+            ax = fig5.subplots()
+            nx.draw(seleted_graphs_joined, pos, with_labels=False, node_size=10, ax=ax, node_color='b')
 
-        # Save res graph
-        base = os.path.basename(file)
-        file_name = os.path.splitext(base)[0]
-        # nx.write_gpickle(door_graph, 'C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/door_graphs/' + file_name + '_door_graph.gpickle')
-        # nx.write_gpickle(door_generalized_graph, 'C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/door_generalized_graphs/' + file_name + '_door_generalized_graph.gpickle')
+            nxg_copy = nxg.copy()
 
-        # Plot graph with instances
-        fig4 = plt.figure(dpi=150)
-        fig4.clf()
-        ax = fig4.subplots()
-        # ax.axis('equal')
-        draw_inst(seleted_graphs_joined, ax, positions)
+            bbox_and_org_graph = nx.Graph()
+            bbox_and_org_graph = nx.compose(bbox_and_org_graph, nxg_copy)
+            bbox_graph = nx.Graph()
+            for g_idx, g in enumerate(list_gen_bboxes):
+                gen_pos = nx.get_node_attributes(g, 'pos')
+                nx.draw(g, gen_pos, with_labels=False, node_color='g', node_size=30, ax=ax)
+                nx.draw_networkx_edges(g, gen_pos, width=2, alpha=0.8, edge_color='g')
+                g = nx.convert_node_labels_to_integers(g, first_label=4 * g_idx)
+                bbox_graph = nx.compose(bbox_graph, g)
+                bbox_graph = nx.convert_node_labels_to_integers(bbox_graph,
+                                                            first_label=bbox_and_org_graph.number_of_nodes())
+            bbox_and_org_graph = nx.compose(bbox_and_org_graph, bbox_graph)
 
-        plt.show()
+            # Save res graph
+            base = os.path.basename(file)
+            file_name = os.path.splitext(base)[0]
+            # nx.write_gpickle(door_graph, 'C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/door_graphs/' + file_name + '_door_graph.gpickle')
+            # nx.write_gpickle(door_generalized_graph, 'C:/Users/Chrips/Aalborg Universitet/Frederik Myrup Thiesson - data/door_generalized_graphs/' + file_name + '_door_generalized_graph.gpickle')
+
+            fig6 = plt.figure(dpi=150)
+            fig6.suptitle('bbox and graph', fontsize=12)
+            fig6.clf()
+            ax = fig6.subplots()
+            bbox_and_org_graph_pos = nx.get_node_attributes(bbox_and_org_graph, 'pos')
+            nx.draw(bbox_and_org_graph, bbox_and_org_graph_pos, with_labels=False, node_size=10, ax=ax, node_color='r')
+
+            fig7 = plt.figure(dpi=150)
+            fig7.clf()
+            ax = fig7.subplots()
+            bbox_graph_pos = nx.get_node_attributes(bbox_graph, 'pos')
+            nx.draw(bbox_graph, bbox_graph_pos, with_labels=False, node_size=10, ax=ax,
+                    node_color='g')
+
+            # Plot graph with instances
+            fig4 = plt.figure(dpi=150)
+            fig4.suptitle('instances and graph', fontsize=12)
+            fig4.clf()
+            ax = fig4.subplots()
+            # ax.axis('equal')
+            draw_inst(seleted_graphs_joined, ax, positions)
+
+            plt.show()
 
 
 if __name__ == '__main__':

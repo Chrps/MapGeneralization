@@ -59,7 +59,7 @@ def map_bbs_to_crop(crop, bbs):
     for bb in bbs:
         h_pixels, w_pixels, _ = img_w_bbs.shape
         x1, y1, x2, y2 = int(bb[0]*w_pixels), int(bb[1]*h_pixels), int((bb[0]+bb[2])*w_pixels), int((bb[1]+bb[3])*h_pixels)
-        img_w_bbs = cv2.rectangle(img_w_bbs,(x1, y1),(x2, y2),(0,255,0),1)
+        img_w_bbs = cv2.rectangle(img_w_bbs,(x1, y1),(x2, y2),(0,255,0),2)
 
     return img_w_bbs
 

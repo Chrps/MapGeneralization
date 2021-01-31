@@ -13,8 +13,8 @@ from sklearn.metrics import balanced_accuracy_score
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--desired_net', type=str, default='sgc')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, sgc # broken: chebnet, monet, 
-parser.add_argument('--num-epochs', type=int, default=250)
+parser.add_argument('--desired_net', type=str, default='gat')  # gcn, tagcn, graphsage, appnp, agnn, gin, gat, sgc # broken: chebnet, monet,
+parser.add_argument('--num-epochs', type=int, default=500)
 parser.add_argument('--batch-size', type=int, default=5)
 parser.add_argument('--data-path', type=str, default='data/Public')
 parser.add_argument('--train-file', type=str, default='train_list.txt')

@@ -10,7 +10,7 @@ from crop import crop_using_cnt, crop_using_min_max, map_bbs_to_crop, Mouse
 # 'advanced'  uses a rendering which includes text, leading to mapping problems
 # 'manual'  takes some trial-and-error but should produce correct mapping
 
-methods = ['simple', 'advanced', 'manual']
+methods = ['simple', 'advanced', 'manual', 'crop']
 
 def get_bbs_from_file(path):
     boxes_file = open(path,"r")
@@ -22,11 +22,29 @@ def get_bbs_from_file(path):
         bbs.append([x1, y1, x2-x1, y2-y1])
     return bbs
 
+def ResizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
+    dim = None
+    (h, w) = image.shape[:2]
+
+    if width is None and height is None:
+        return image
+    if width is None:
+        r = height / float(h)
+        dim = (int(w * r), height)
+    else:
+        r = width / float(w)
+        dim = (width, int(h * r))
+
+    return cv2.resize(image, dim), 1/r
+
 if __name__ == "__main__":
     """
+    Option 1. (fails)
     #libreoffice --headless --convert-to pdf A1322PE-0.dxf
     #pdfcrop A1322PE-0.pdf
     #gs -sDEVICE=png256 -r600 -dNOPAUSE -dBATCH -dSAFER -sOutputFile=A1322PE-0.png A1322PE-0-crop.pdf
+
+    Option 2. https://anyconv.com/dwg-to-pdf-converter/
 
     Command:
         -l path/to/image_list.txt
@@ -34,11 +52,11 @@ if __name__ == "__main__":
     # construct the argument parser and parse the arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-r", "--root", type=str,
-                    default='/home/markpp/github/MapGeneralization/data/Public/', help="data root dir")
+                    default='/home/markpp/github/MapGeneralization/data/Private/', help="data root dir")
     ap.add_argument("-l", "--list", type=str,
                     default='test_list.txt', help="File list")
     ap.add_argument("-m", "--method", type=int,
-                    default=1, help="method selection")
+                    default=2, help="method selection")
     args = vars(ap.parse_args())
 
     METHOD = methods[args["method"]]
@@ -50,14 +68,54 @@ if __name__ == "__main__":
     for path in file_list[:]:
 
         image_path = os.path.join(args["root"],path.replace('/anno/','/images/').replace('_w_annotations.gpickle','.png'))
-        print(os.path.dirname(image_path))
+        print(path)
         if not os.path.exists(os.path.dirname(image_path)):
             os.makedirs(os.path.dirname(image_path))
 
         crop_path = os.path.join(args["root"],path.replace('/anno/','/pdfs/').replace('_w_annotations.gpickle','.txt'))
+        print(crop_path)
+        #if os.path.exists(crop_path):
+        #    continue
 
-        if os.path.exists(crop_path):
-            continue
+        if METHOD == 'crop':
+            pdf_path = os.path.join(args["root"],path.replace('/anno/','/pdfs/').replace('_w_annotations.gpickle','.pdf'))
+            os.system("gs -sDEVICE=png256 -r300 -dNOPAUSE -dBATCH -dSAFER -sOutputFile=temp.png {}".format(pdf_path))
+
+            bb_path = os.path.join(args["root"],path.replace('/anno/','/bboxes/').replace('_w_annotations.gpickle','_boxes_image_format.txt'))
+            bbs = get_bbs_from_file(bb_path)
+
+            img = cv2.imread("temp.png")
+            img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            ret, threshold = cv2.threshold(img_gray, 254, 255, cv2.THRESH_BINARY_INV)
+            kernel = np.ones((3,3), np.uint8)
+            tmp_img = cv2.dilate(threshold, kernel, iterations=1)
+            #resize to hight of screen
+            if tmp_img.shape[0] > tmp_img.shape[1]:
+                tmp_img, _ = ResizeWithAspectRatio(tmp_img, height=1400)
+            else:
+                tmp_img, _ = ResizeWithAspectRatio(tmp_img, width=1400)
+            tmp_img = cv2.cvtColor(tmp_img, cv2.COLOR_GRAY2BGR)
+
+            # read crop
+            crop_file = open(crop_path,"r")
+            lines = crop_file.readlines()
+            #crop_file.write("{},{},{},{}".format(x, y, w, h))
+            crop_file.close()
+
+            x, y, w, h = lines[0].split(',')
+            x, y, w, h = int(x), int(y), int(w), int(h)
+            print("x {}, y {}, w {}, h {}".format(x, y, w, h))
+            crop = img[y:y+h, x:x+w]
+            crop_gray = img_gray[y:y+h, x:x+w]
+            crop_w_bbs = map_bbs_to_crop(crop_gray, bbs)
+            if crop_w_bbs.shape[0] > crop_w_bbs.shape[1]:
+                show_img, _ = ResizeWithAspectRatio(crop_w_bbs, height=1400)
+            else:
+                show_img, _ = ResizeWithAspectRatio(crop_w_bbs, width=1400)
+            cv2.imshow("tmp_img",tmp_img)
+            cv2.imshow("crop_w_bbs",show_img)
+
+            cv2.waitKey()
 
         if METHOD == 'manual':
             pdf_path = os.path.join(args["root"],path.replace('/anno/','/pdfs/').replace('_w_annotations.gpickle','.pdf'))
@@ -70,12 +128,13 @@ if __name__ == "__main__":
             img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
             #resize to hight of screen
-            scale = 1080 / img.shape[1]
-            scale_ = img.shape[1] / 1080
-            tmp_img = cv2.resize(img_gray, (int(img.shape[1] * scale), int(img.shape[0] * scale)))
+            if img_gray.shape[0] > img_gray.shape[1]:
+                tmp_img, scale = ResizeWithAspectRatio(img_gray, height=1400)
+            else:
+                tmp_img, scale = ResizeWithAspectRatio(img_gray, width=1400)
             ret, threshold = cv2.threshold(tmp_img, 254, 255, cv2.THRESH_BINARY_INV)
             kernel = np.ones((3,3), np.uint8)
-            tmp_img = cv2.dilate(threshold, kernel, iterations=1)
+            tmp_img = cv2.dilate(threshold, kernel, iterations=2)
             tmp_img = cv2.cvtColor(tmp_img, cv2.COLOR_GRAY2BGR)
 
             # Create a window
@@ -86,12 +145,16 @@ if __name__ == "__main__":
             while(1):
                 tmp = tmp_img.copy()
                 if mouse.left and mouse.middle:
-                    tmp = cv2.rectangle(tmp,(mouse.l[0], mouse.l[1]),(mouse.m[0], mouse.m[1]),(0,255,0),1)
-                    x, y, w, h = int(mouse.l[0]*scale_), int(mouse.l[1]*scale_), int((mouse.m[0]-mouse.l[0])*scale_), int((mouse.m[1]-mouse.l[1])*scale_)
+                    tmp = cv2.rectangle(tmp,(mouse.l[0], mouse.l[1]),(mouse.m[0], mouse.m[1]),(0,255,0),3)
+                    x, y, w, h = int(mouse.l[0]*scale), int(mouse.l[1]*scale), int((mouse.m[0]-mouse.l[0])*scale), int((mouse.m[1]-mouse.l[1])*scale)
                     crop = img[y:y+h, x:x+w]
                     crop_gray = img_gray[y:y+h, x:x+w]
                     crop_w_bbs = map_bbs_to_crop(crop_gray, bbs)
-                    cv2.imshow("crop_w_bbs",crop_w_bbs)
+                    if crop_w_bbs.shape[0] > crop_w_bbs.shape[1]:
+                        show_img, _ = ResizeWithAspectRatio(crop_w_bbs, height=1400)
+                    else:
+                        show_img, _ = ResizeWithAspectRatio(crop_w_bbs, width=1400)
+                    cv2.imshow("crop_w_bbs",show_img)
 
                 cv2.imshow("select crop",tmp)
                 key = cv2.waitKey(30)

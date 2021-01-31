@@ -7,9 +7,9 @@ import src.models as models
 import os
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data-path', type=str, default='data/public')
+parser.add_argument('--data-path', type=str, default='data/Public')
 parser.add_argument('--evaluate-path', type=str, default='test_list.txt')
-parser.add_argument('--model-path', type=str, default='gat_20-05-22_19-04-14_final')
+parser.add_argument('--model-path', type=str, default='gat_20-09-29_15-55-58')
 args = parser.parse_args()
 
 
@@ -70,8 +70,8 @@ if __name__ == '__main__':
     model.load_state_dict(torch.load(model_state))
 
     print(evaluate_path)
-    graphs, labels, features = graph_utils.batch_graphs(os.path.join(data_path, evaluate_path), data_path)
+    graphs, labels, features = graph_utils.batch_graphs(data_path, evaluate_path)
     overall_acc, class0_acc, class1_acc = evaluate(model, graphs, features, labels)
-    print('Overall Accuracy: %.2f' % overall_acc)
-    print('Door Accuracy: %.2f' % class1_acc)
-    print('Non-door Accuracy: %.2f' % class0_acc)
+    print('Overall Accuracy: %.4f' % overall_acc)
+    print('Door Accuracy: %.4f' % class1_acc)
+    print('Non-door Accuracy: %.4f' % class0_acc)
