@@ -7,7 +7,7 @@ By Christoffer P. Simonsen, Frederik M. Thiesson, Mark P. Philipsen, and Thomas 
 
 ## Introduction
 
-This repository contains the code & links to annotation data for our WACV 2021 submission: ['Generalizing Doors in Technical Drawings using Graph Neural Networks'](https://arxiv.org/abs/xxx). Here, we present how floor plan elements can be recognized by constructing graphs from the primitives in dxf files and performing node classifiation using Graph Neural Networks.
+This repository contains the code & links to annotation data for our ICIP 2021 submission: ['Generalizing Doors in Technical Drawings using Graph Neural Networks'](https://arxiv.org/abs/xxx). Here, we present how floor plan elements can be recognized by constructing graphs from the primitives in dxf files and performing node classifiation using Graph Neural Networks.
 
 ## Requirements
 
