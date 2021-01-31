@@ -3,7 +3,7 @@ By Christoffer P. Simonsen, Frederik M. Thiesson, Mark P. Philipsen, and Thomas 
 
 [2020/06/17: Master thesis defense & project ended]
 
-[2020/08/27: Paper submitted & public data/code/models available]
+[2021/01/29: Paper submitted & public data/code/models available]
 
 ## Introduction
 
