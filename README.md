@@ -3,17 +3,19 @@ By Christoffer P. Simonsen, Frederik M. Thiesson, Mark P. Philipsen, and Thomas 
 
 [2020/06/17: Master thesis defense & project ended]
 
-[2021/01/29: Paper submitted & public data/code/models available]
+[2021/01/29: data/code/models available]
+
+[2021/04/20: Paper accepted at ICIP 2021]
 
 ## Introduction
 
-This repository contains the code & links to annotation data for our ICIP 2021 submission: ['Generalizing Doors in Technical Drawings using Graph Neural Networks'](https://arxiv.org/abs/xxx). Here, we present how floor plan elements can be recognized by constructing graphs from the primitives in dxf files and performing node classifiation using Graph Neural Networks.
+This repository contains the code & links to annotation data for our ICIP 2021 submission: 'Generalizing Doors in Technical Drawings using Graph Neural Networks'. Here, we present how floor plan elements can be recognized by constructing graphs from the primitives in dxf files and performing node classification using Graph Neural Networks.
 
 ## Requirements
 
 - OpenCV
 - Python 3
-- pip3 torch pytorch-lightning ezdxf
+- pip3 torch ezdxf
 
 sudo apt-get install python3-tk
 
@@ -25,9 +27,9 @@ Our pubic dataset is available in the [data/](data/Public) directory. The datase
 
 ![dataset_creation_and_content](figs/dataset_creation_and_content.png)
 
-The data is available as ready to use labeled graphs stored as .gpickle files. In addition, we provide the original dxf files as well as tools for either extracting the graphs or generating rasterized floor plan images.
+The data is available as ready to use labeled graphs stored as .gpickle files. In addition, we provide the original dxf files as well as tools for extracting the graphs and generating rasterized floor plan images.
 
-TODO: For more details about the RUB dataset and existing datasets see [datasets.pdf](datasets.pdf).
+More details about the RUB dataset and other floorplan datasets see [datasets.pdf](data/datasets.pdf) in the data/ directory.
 
 ## Tools
 
@@ -79,8 +81,6 @@ python eval.py --mode=node --model=/trained_models/model.pt
 ## Citation
 
 Please consider citing:
-
-TODO: upload to arxiv
 ---
-
+TODO
 ---
