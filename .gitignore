@@ -133,6 +133,4 @@ data/Private/
 data/Public_old/
 old/
 yolo/
-trained_models/
-*.ckpt
 wandb/
