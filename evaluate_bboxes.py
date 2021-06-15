@@ -26,6 +26,7 @@ def get_preds_from_file(path, confidence=0.5):
     bb_lines = boxes_file.readlines()
     bbs = []
     for bb_line in bb_lines:
+        #x2, y2, x1, y1 = bb_line.split(' ')
         score, x2, y2, x1, y1 = bb_line.split(' ')
         x1, y1, x2, y2 = float(x1), float(y1), float(x2), float(y2)
         #w, h = x2 - x1, y2 - y1
@@ -179,17 +180,17 @@ if __name__ == "__main__":
     # construct the argument parser and parse the arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-r", "--root", type=str,
-                    default='/home/markpp/github/MapGeneralization/data/Public/', help="data root dir")
+                    default='data/Public/', help="data root dir")
     ap.add_argument("-l", "--list", type=str,
                     default='test_list_reduced.txt', help="File list")
     ap.add_argument("-m", "--method", type=int,
-                    default=1, help="method selection")
+                    default=0, help="method selection")
     ap.add_argument("-i", "--iou", type=float,
-                    default=0.75, help="IoU threshold")
+                    default=0.5, help="IoU threshold")
     ap.add_argument("-c", "--conf_trsh", type=float,
                     default=0.95, help="Confidence threshold")
     ap.add_argument("-s", "--show", type=int,
-                    default=0, help="show detections")
+                    default=1, help="show detections")
     args = vars(ap.parse_args())
 
     METHOD = methods[args["method"]]
@@ -206,20 +207,22 @@ if __name__ == "__main__":
 
             #resize to hight of screen
             if crop.shape[0] > crop.shape[1]:
-                crop, _ = resize_with_aspect_ratio(crop, height=1400)
+                crop, _ = resize_with_aspect_ratio(crop, height=1920)
             else:
-                crop, _ = resize_with_aspect_ratio(crop, width=1400)
+                crop, _ = resize_with_aspect_ratio(crop, width=1920)
 
         bb_path = os.path.join(args["root"],path.replace('/anno/','/bboxes/').replace('_w_annotations.gpickle','_boxes_image_format.txt'))
         bbs = get_gts_from_file(bb_path)
+        print(len(bbs))
 
         if args["show"]:
-            result = map_bbs_to_crop(crop, bbs, thickness=2)
+            result = map_bbs_to_crop(crop, bbs, thickness=6)
 
         if METHOD == 'gnn':
             pred_path = os.path.join(args["root"],path.replace('/anno/','/pred_bboxes/').replace('_w_annotations.gpickle','_gnn_boxes_image_format.txt'))
-            pred_bbs = get_preds_from_file(pred_path, confidence=args["conf_trsh"])
-
+            pred_bbs = get_gts_from_file(pred_path)
+            #pred_bbs = get_preds_from_file(pred_path, confidence=args["conf_trsh"])
+            print(len(pred_bbs))
             if args["show"]:
                 result = map_bbs_to_crop(result, pred_bbs, color=(255,0,0), thickness=2)
 
@@ -253,6 +256,8 @@ if __name__ == "__main__":
     print("precision {:.4f}".format(precision))
     recall = total_tps/(total_tps+total_fns)
     print("recall {:.4f}".format(recall))
+    accuracy = (total_tps)/(total_tps+total_fps+total_fns)
+    print("accuracy {:.4f}".format(accuracy))
     if precision < 0.01:
         precision += 0.01
     f1 = 2*((precision*recall)/(precision+recall))

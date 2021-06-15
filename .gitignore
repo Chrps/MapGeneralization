@@ -123,12 +123,15 @@ venv.bak/
 *.jpg
 
 # text
-*.txt
+
 
 # training logs
 
 lightning_logs/
 data/Private/
+data/Public_old/
+old/
+yolo/
 trained_models/
 *.ckpt
 wandb/

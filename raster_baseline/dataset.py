@@ -137,7 +137,7 @@ class DoorDataset(torch.utils.data.Dataset):
 
 if __name__ == '__main__':
 
-    dataset = DoorDataset(root='/home/markpp/github/MapGeneralization/data/Public',
+    dataset = DoorDataset(root='../data/Public',
                           list='valid_list_reduced_cnn.txt')
 
     output_dir = "yolo/val"
@@ -188,98 +188,3 @@ if __name__ == '__main__':
                     with open(os.path.join(output_dir,filename.replace('jpg','txt')), 'w') as pred_file:
                         for bb in bbs:
                             pred_file.write('0 {:.4f} {:.4f} {:.4f} {:.4f}\n'.format(bb[0],bb[1],bb[2],bb[3]))
-
-
-'''
-    data = iter(dataloader)
-    labels = []
-    for batch in range(10):
-        images,targets = next(data)
-        for i, img_tar in enumerate(zip(images,targets)):
-            img, tar = img_tar
-            labels.append(tar.item())
-            img = unnormalize(img)
-            img = img.mul(255).permute(1, 2, 0).byte().numpy()
-            if batch == 0:
-                cv2.imwrite("output/b{}_i{}_c{}.png".format(batch,i,tar),img)
-        print("# defects {}, ok {}".format(np.count_nonzero(np.array(labels) == 0),np.count_nonzero(np.array(labels) == 1)))
-
-class BOItemDataset(torch.utils.data.Dataset):
-    def __init__(self, root):
-        self.root = root
-        self.image_size = 240
-        self.transforms = self.get_transform()
-        self.classes = ['defect','ok']
-
-        self.img_list = []
-        self.list_idx = 0
-
-        items = sorted([f for f in os.listdir(root) if 'item' in f])
-        for item in items[:]:
-            for f in [f for f in os.listdir(os.path.join(self.root,item,"rgb")) if f.lower().endswith(('.jpg', '.jpeg'))]:
-                self.img_list.append(os.path.join(self.root,item,"rgb",f))
-
-        # count number of samples
-        width, height, _ = cv2.imread(os.path.join(self.root, self.img_list[0])).shape
-        self.n_samples = len(self.img_list) * height // self.image_size * width // self.image_size
-        print("number of patches {}".format(self.n_samples))
-
-        self.crops = []
-        self.labels = []
-
-    def load_sample(self, idx):
-        # generate crops from image, label as defect if it contains a defect
-        if len(self.crops) < 1:
-            rgb_path = os.path.join(self.root, self.img_list[self.list_idx])
-            self.list_idx = self.list_idx + 1
-            mask_path = rgb_path.replace('rgb','masks').replace('jpg','png')
-
-
-            # use PIL to load data
-            img = Image.open(rgb_path).convert("RGB")
-            mask = Image.open(mask_path)
-            if mask is None:
-                mask = Image.new("L", img.size, (0,))
-
-            img = cv2.imread(rgb_path)
-            mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-            if mask is None:
-                mask = np.zeros((img.shape[0],img.shape[1]), dtype=np.int8)
-
-            # divide image into appropritate crops and detect defects
-            for x in range(0,img.shape[1]-self.image_size,self.image_size):
-                for y in range(0,img.shape[0]-self.image_size,self.image_size):
-                    crop = img[y:y+self.image_size, x:x+self.image_size]
-                    mask_crop = mask[y:y+self.image_size, x:x+self.image_size]
-                    nonzero = np.count_nonzero(mask_crop)
-                    if nonzero:
-                        self.labels.append(0)
-                    else:
-                        self.labels.append(1)
-                    self.crops.append(crop)
-
-        return self.crops.pop(), self.labels.pop()
-
-    def get_transform(self):
-        tfms = []
-        #tfms.append(RandomCrop(self.image_size))
-        tfms.append(ToTensor())
-        tfms.append(Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225]))
-        return Compose(tfms)
-
-    def __getitem__(self, idx):
-        img, target = self.load_sample(idx)
-
-        img = img.transpose((2, 0, 1))
-        img = img / 255.0
-        img[0] = (img[0] - 0.485)/0.229
-        img[1] = (img[1] - 0.456)/0.224
-        img[2] = (img[2] - 0.406)/0.225
-        img = torch.from_numpy(img)
-        img = img.float()
-
-        return img, target
-
-    def __len__(self):
-        return self.n_samples
-'''

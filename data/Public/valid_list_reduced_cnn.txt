@@ -1,0 +1,12 @@
+AU/images/A1325PE_0.png
+AU/images/A1325PE_4.png
+AU/images/L1321_H1_E1_K13.03_B07.01_N01_ZEtage_1.png
+AU/images/L1323_H1_E4_K13.03_B07.01_N001_ZEtage_4.png
+AU/images/L1328_H1_E3_K13.03_B07.01_N001_ZEtage_3.png
+AU/images/L1414_H1_E2_K13.03_B07.01_N01_ZEtage_2.png
+AU/images/L1415_H1_E0_K13.03_B07.01_N01_ZEtage_0.png
+Canterbury/images/M_S1_Becket_Ground_Floor.png
+Canterbury/images/M_S1_Chaplaincy_Centre_Ground_Floor.png
+Canterbury/images/M_S1_Erasmus_Second_Floor.png
+Canterbury/images/M_S1_Estates_Ground_Floor.png
+Musikkenshus/images/MSP1-HoM-MA-XX+5-ET.png

@@ -1,0 +1,12 @@
+AU/anno/A1325PE_0_w_annotations.gpickle
+AU/anno/A1325PE_4_w_annotations.gpickle
+AU/anno/L1321_H1_E1_K13.03_B07.01_N01_ZEtage_1_w_annotations.gpickle
+AU/anno/L1323_H1_E4_K13.03_B07.01_N001_ZEtage_4_w_annotations.gpickle
+AU/anno/L1328_H1_E3_K13.03_B07.01_N001_ZEtage_3_w_annotations.gpickle
+AU/anno/L1414_H1_E2_K13.03_B07.01_N01_ZEtage_2_w_annotations.gpickle
+AU/anno/L1415_H1_E0_K13.03_B07.01_N01_ZEtage_0_w_annotations.gpickle
+Canterbury/anno/M_S1_Becket_Ground_Floor_w_annotations.gpickle
+Canterbury/anno/M_S1_Chaplaincy_Centre_Ground_Floor_w_annotations.gpickle
+Canterbury/anno/M_S1_Erasmus_Second_Floor_w_annotations.gpickle
+Canterbury/anno/M_S1_Estates_Ground_Floor_w_annotations.gpickle
+Musikkenshus/anno/MSP1-HoM-MA-XX+5-ET_w_annotations.gpickle

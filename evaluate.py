@@ -8,7 +8,7 @@ import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data-path', type=str, default='data/Public')
-parser.add_argument('--evaluate-path', type=str, default='test_list.txt')
+parser.add_argument('--evaluate-path', type=str, default='test_list_reduced.txt')
 parser.add_argument('--model-path', type=str, default='gat_20-09-29_15-55-58')
 args = parser.parse_args()
 

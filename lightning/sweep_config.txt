@@ -1,0 +1,30 @@
+command:
+- ${env}
+- python3
+- ${program}
+- ${args}
+method: random
+metric:
+  goal: maximize
+  name: val_overall_acc
+parameters:
+  network:
+    distribution: categorical
+    values:
+    - gcn
+    - graphsage
+    - tagcn
+    - gat
+    - agnn
+    - gin
+    - appnp
+  batch_size:
+    distribution: int_uniform
+    min: 3
+    max: 5
+  windowing:
+    distribution: categorical
+    values:
+    - true
+    - false
+program: lightning_train.py
