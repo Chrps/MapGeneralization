@@ -119,8 +119,9 @@ venv.bak/
 
 
 # images
-*.png
-*.jpg
+*_bbs.png
+*_gray.png
+#*.jpg
 
 # text
 
